@@ -1,0 +1,135 @@
+<nav class="navbar navbar-expand-lg navbar-light bg-black fixed-top">
+  <div class="container">
+    <h1 class="navbar-brand" style="color: white;">
+      <a routerLink="/home" style="text-decoration: none; color: white;">
+        <img
+          src="../../../assets/img/logo.png"
+          alt="Logo do Albergue Noturno"
+          height="30"
+          class="align-top"
+        />
+        Albergue Noturno
+      </a>
+    </h1>
+    <button
+      class="navbar-toggler"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#navbarSupportedContent"
+      aria-controls="navbarSupportedContent"
+      aria-expanded="false"
+      aria-label="Toggle navigation"
+    >
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link"
+            routerLink="/home"
+            routerLinkActive="active"
+            ariaCurrentWhenActive="page">Página inicial</a>
+        </li>
+
+        <li class="nav-item" *ngIf="isLoggedIn()">
+          <a class="nav-link"
+            routerLink="/appointments"
+            routerLinkActive="active"
+            ariaCurrentWhenActive="page">Agendamentos</a>
+        </li>
+
+        <li class="nav-item" *ngIf="!isLoggedIn()">
+          <a class="nav-link"
+            routerLink="/appointments"
+            routerLinkActive="active"
+            ariaCurrentWhenActive="page">Agendamentos</a>
+        </li>
+
+        <li class="nav-item" *ngIf="!isLoggedIn()">
+          <a class="nav-link"
+            routerLink="/contacts"
+            routerLinkActive="active"
+            ariaCurrentWhenActive="page">Contatos</a>
+        </li>
+
+        <li class="nav-item" *ngIf="!isLoggedIn()">
+          <a class="nav-link"
+            routerLink="/jobs"
+            routerLinkActive="active"
+            ariaCurrentWhenActive="page">Trabalhe conosco</a>
+        </li>
+        <li class="nav-item" *ngIf="!isLoggedIn()">
+          <a class="nav-link"
+            routerLink="/about"
+            routerLinkActive="active"
+            ariaCurrentWhenActive="page">Sobre</a>
+        </li>
+
+        <li class="nav-item" *ngIf="isAdmin()">
+          <a class="nav-link"
+            routerLink="/appointments-list"
+            routerLinkActive="active"
+            ariaCurrentWhenActive="page">Lista de Agendamentos</a>
+        </li>
+        <li class="nav-item" *ngIf="isEmployee()">
+          <a class="nav-link"
+            routerLink="/appointments-list"
+            routerLinkActive="active"
+            ariaCurrentWhenActive="page">Lista de Agendamentos</a>
+        </li>
+
+        <li class="nav-item" *ngIf="isAdmin()">
+          <a class="nav-link"
+             routerLink="/user-registration"
+             routerLinkActive="active"
+             ariaCurrentWhenActive="page">Registrar Funcionários</a>
+        </li>
+        <li class="nav-item" *ngIf="isAdmin()">
+          <a class="nav-link"
+             routerLink="/reports"
+             routerLinkActive="active"
+             ariaCurrentWhenActive="page">Relatórios</a>
+        </li>
+      
+      </ul>
+    </div>
+
+    <!-- Dropdown de usuário se estiver logado -->
+    <div class="dropdown user-dropdown" *ngIf="isLoggedIn(); else notLoggedIn">
+      <button
+        class="dropdown-toggle user-dropdown-button"
+        type="button"
+        id="dropdownMenu2"
+        data-bs-toggle="dropdown"
+        aria-haspopup="true"
+        aria-expanded="false"
+      >
+        <img [src]="userPhotoUrl || 'assets/img/default-user.png'" alt="Foto do usuário" class="user-photo rounded-circle">
+        <span>{{ userName }}</span>
+      </button>
+      <div class="dropdown-menu user-dropdown-menu" aria-labelledby="dropdownMenu2">
+        <button class="dropdown-item" type="button" (click)="openPhotoUploadModal()">
+          <i class="fas fa-camera"></i> Trocar Foto
+        </button>
+        <button class="dropdown-item" type="button" (click)="logout()">
+          <i class="fas fa-sign-out-alt"></i> Sair
+        </button>
+      </div>
+    </div>
+
+    <!-- Se não estiver logado, exibe o botão de login -->
+    <ng-template #notLoggedIn>
+      <button
+        class="login-button"
+        type="button"
+        (click)="navigateToLogin()"
+      >
+        <i class="fas fa-user"></i> Entrar
+      </button>
+    </ng-template>
+
+    <!-- Input para selecionar nova foto (escondido) -->
+    <input type="file" id="photoUploadInput" (change)="uploadPhoto($event)" style="display: none;" />
+  </div>
+</nav>

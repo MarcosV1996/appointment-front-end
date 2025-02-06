@@ -1,0 +1,53 @@
+.filter-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  
+  .fa-filter {
+    cursor: pointer;
+    font-size: 20px;
+  }
+  
+  @media (max-width: 768px) {
+    .filter-container {
+      justify-content: center;
+    }
+  }
+  
+  @media (max-width: 576px) {
+    .filter-container {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+
+  .filter-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 auto 20px; 
+}
+
+
+
+@media (max-width: 768px) { /* Telas menores que 768px (tablets) */
+  .filter-container {
+     
+      flex-direction: column;
+      align-items: flex-start;
+  }
+}
+
+@media (max-width: 576px) { /* Telas menores que 576px (celulares) */
+  .filter-container {
+    flex-direction: column;
+      align-items: flex-start;
+  }
+}
+
+
+  

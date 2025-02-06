@@ -1,0 +1,39 @@
+<footer class="footer">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-4 mb-4">
+        <h4>Contato</h4>
+        <p>Cras: {{ '42000000000' | telefone }}</p>
+        <p>Doações: {{ '42000000000' | telefone }}</p>
+        <p>Grupo de oração: {{ '42000000000' | telefone }}</p>
+        <p>Apostólico: {{ '42000000000' | telefone }}</p>
+      </div>
+
+      <div class="col-md-4 mb-4">
+        <h4>Redes Sociais</h4>
+        <ul class="list-unstyled social-icons-container">
+          <li *ngFor="let redeSocial of redesSociais">
+            <a href="{{ redeSocial.link }}" [attr.aria-label]="redeSocial.nome">
+              <img class="social-icon" [src]="redeSocial.nome | socialIcon" [alt]="redeSocial.nome" /> 
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <div class="col-md-4 mb-4">
+        <h4>Localização</h4>
+        <p>
+          <a href="https://www.google.com/maps/..." target="_blank">
+            {{ 'Rua Jaime de Amaral De Pacheco, Conradinho, Guarapuava - PR' |uppercase }}
+          </a>
+        </p>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-12 text-center">
+      <p class="mt-4">Direitos Reservados &copy; {{ dataAtual | date:'yyyy' }} - Albergue Noturno</p>
+      </div>
+    </div>
+  </div>
+</footer>

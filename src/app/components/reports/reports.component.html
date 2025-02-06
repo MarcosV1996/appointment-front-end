@@ -1,0 +1,238 @@
+<div class="container mt-5">
+  <h1 class="text-center mb-4">Relatórios</h1>
+
+  <!-- Filtros -->
+  <div class="card mb-4 shadow-sm">
+    <div class="card-body">
+      <form class="row g-3">
+
+        <!-- Filtro de quarto -->
+        <div class="col-md-3">
+          <label for="room" class="form-label">Quarto:</label>
+          <select
+            id="room"
+            [(ngModel)]="filters.room"
+            name="room"
+            class="form-control"
+            (change)="setActiveFilter('room')"
+          >
+            <option value="" disabled selected>Selecionar...</option>
+            <option value="A">Quarto A</option>
+            <option value="B">Quarto B</option>
+            <option value="C">Quarto C</option>
+          </select>
+        </div>
+
+        <!-- Filtro de gênero -->
+        <div class="col-md-3">
+          <label for="gender" class="form-label">Gênero:</label>
+          <select
+            id="gender"
+            [(ngModel)]="filters.gender"
+            name="gender"
+            class="form-control"
+            (change)="setActiveFilter('gender')"
+          >
+            <option value="" disabled selected>Selecionar...</option>
+            <option value="Masculino">Masculino</option>
+            <option value="Feminino">Feminino</option>
+            <option value="Outro">Outro</option>
+          </select>
+        </div>
+
+        <!-- Filtro de faixa etária -->
+        <div class="col-md-3">
+          <label for="ageGroup" class="form-label">Faixa Etária:</label>
+          <select
+            id="ageGroup"
+            [(ngModel)]="filters.ageGroup"
+            name="ageGroup"
+            class="form-control"
+            (change)="setActiveFilter('ageGroup')"
+          >
+            <option value="" disabled selected>Selecionar...</option>
+            <option value="idosos">Idosos (60+)</option>
+            <option value="adultos">Adultos (18-59)</option>
+          </select>
+        </div>
+
+        <!-- Filtro de turno -->
+        <div class="col-md-3">
+          <label for="turn" class="form-label">Turno:</label>
+          <select
+            id="turn"
+            [(ngModel)]="filters.turn"
+            name="turn"
+            class="form-control"
+            (change)="setActiveFilter('turn')"
+          >
+            <option value="" disabled selected>Selecionar...</option>
+            <option value="manha">Manhã (06:00 - 12:00)</option>
+            <option value="tarde">Tarde (12:00 - 18:00)</option>
+            <option value="noite">Noite (18:00 - 23:59)</option>
+            <option value="madrugada">Madrugada (00:00 - 06:00)</option>
+          </select>
+        </div>
+
+        <!-- Botões de ação -->
+        <div class="col-12 text-center mt-3">
+          <button
+            type="button"
+            class="btn btn-info shadow me-2"
+            (click)="viewAllReports()"
+          >
+            Ver Todos
+          </button>
+          <button
+            type="button"
+            class="btn btn-secondary shadow"
+            (click)="resetFilters()"
+          >
+            Limpar Tela
+          </button>
+          <button
+            type="button"
+            class="btn btn-success shadow ms-2"
+            (click)="toggleChartView()"
+          >
+            {{ showCharts ? 'Ocultar Gráficos' : 'Ver Gráficos' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Mensagem de carregamento -->
+  <div *ngIf="isLoading" class="text-center mt-4">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Carregando...</span>
+    </div>
+  </div>
+
+  <!-- Blocos de Relatórios -->
+  <div *ngIf="isFilterApplied || activeFilter === 'all'" class="d-flex flex-wrap gap-4">
+    <!-- Exibe Camas Ocupadas por Quarto -->
+    <div
+      class="card report-card"
+      *ngIf="filters.room || activeFilter === 'all'"
+    >
+      <div class="card-body">
+        <h3 class="text-center">Camas Ocupadas por Quarto</h3>
+        <div *ngIf="!showCharts">
+          <table class="table table-bordered text-center">
+            <thead class="table-dark">
+              <tr>
+                <th>Quarto</th>
+                <th>Camas Ocupadas</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngIf="filters.room === 'A' || activeFilter === 'all'">
+                <td>Quarto A</td>
+                <td>{{ bedCounts.A }}</td>
+              </tr>
+              <tr *ngIf="filters.room === 'B' || activeFilter === 'all'">
+                <td>Quarto B</td>
+                <td>{{ bedCounts.B }}</td>
+              </tr>
+              <tr *ngIf="filters.room === 'C' || activeFilter === 'all'">
+                <td>Quarto C</td>
+                <td>{{ bedCounts.C }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div *ngIf="showCharts">
+          <canvas id="roomChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Exibe Por Gênero -->
+    <div
+      class="card report-card"
+      *ngIf="filters.gender || activeFilter === 'all'"
+    >
+      <div class="card-body">
+        <h3 class="text-center">Por Gênero</h3>
+        <div *ngIf="!showCharts">
+          <table class="table table-bordered text-center">
+            <thead class="table-dark">
+              <tr>
+                <th>Gênero</th>
+                <th>Quantidade</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let gender of aggregatedData.gender_counts">
+                <td>{{ getTranslatedGender(gender.gender) }}</td>
+                <td>{{ gender.count }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div *ngIf="showCharts">
+          <canvas id="genderChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Exibe Por Faixa Etária -->
+    <div
+      class="card report-card"
+      *ngIf="filters.ageGroup || activeFilter === 'all'"
+    >
+      <div class="card-body">
+        <h3 class="text-center">Por Faixa Etária</h3>
+        <div *ngIf="!showCharts">
+          <table class="table table-bordered text-center">
+            <thead class="table-dark">
+              <tr>
+                <th>Faixa Etária</th>
+                <th>Quantidade</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let ageGroup of aggregatedData.age_counts">
+                <td>{{ ageGroup.group }}</td>
+                <td>{{ ageGroup.count }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div *ngIf="showCharts">
+          <canvas id="ageChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Exibe Por Turno -->
+    <div
+      class="card report-card"
+      *ngIf="filters.turn || activeFilter === 'all'"
+    >
+      <div class="card-body">
+        <h3 class="text-center">Por Turno</h3>
+        <div *ngIf="!showCharts">
+          <table class="table table-bordered text-center">
+            <thead class="table-dark">
+              <tr>
+                <th>Turno</th>
+                <th>Quantidade</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let turno of turnoCounts">
+                <td>{{ turno.label }}</td>
+                <td>{{ turno.count }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div *ngIf="showCharts">
+          <canvas id="turnChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

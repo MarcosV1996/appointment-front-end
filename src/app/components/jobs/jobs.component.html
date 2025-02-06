@@ -1,0 +1,27 @@
+<body>
+    <div class="margin-top-page">
+      <div class="container">
+        <div class="form-container">
+          <h2>Trabalhe Conosco</h2>
+          <form id="trabalhe-conosco-form" (ngSubmit)="submitForm()">
+            <label for="nome">Nome</label>
+            <input type="text" id="nome" name="nome" [(ngModel)]="formData.nome" obrigatório>
+  
+            <label for="email">E-mail</label>
+            <input type="email" id="email" name="email" [(ngModel)]="formData.email">
+  
+            <label for="telefone">Telefone</label>
+            <input type="num" id="telefone" name="telefone" [(ngModel)]="formData.telefone">
+  
+            <label for="curriculo">Anexe seu currículo</label>
+            <input type="file" id="curriculo" name="curriculo" (change)="onFileSelected($event)" accept=".pdf,.doc,.docx">
+  
+            <button type="submit">Enviar</button>
+          </form>
+          <div *ngIf="submissionError">{{ submissionError }}</div> 
+          <div *ngIf="submissionSuccess">Formulário enviado com sucesso!</div>
+        </div>
+      </div>
+    </div>
+  </body>
+  

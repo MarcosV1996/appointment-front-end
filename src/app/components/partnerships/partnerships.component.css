@@ -1,0 +1,34 @@
+body {
+    margin-top: 200px;
+}
+
+.card-img-top {
+    width: 100%;
+    height: 150px;
+    object-fit: contain;
+}
+.card-body {
+    padding-top: 0;
+}
+.card-title {
+    margin-bottom: 10px;
+}
+
+.container { 
+    text-align: center; 
+  }
+
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  h1 { 
+    margin-bottom: 20px;
+  }
+  
+  app-filter { 
+    margin-bottom: 20px; 
+  }
+  

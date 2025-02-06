@@ -1,0 +1,95 @@
+<body>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.9.1/font/bootstrap-icons.min.css">
+  
+  <div class="d-flex justify-content-center align-items-center vh-100">
+    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="p-4 border rounded shadow bg-white" style="max-width: 400px; width: 100%;">
+      <h3 class="mb-4 text-center text-primary">Registrar Usuário</h3>
+  
+      <!-- Nome Completo -->
+      <div class="mb-3">
+        <label for="name" class="form-label">Nome Completo</label>
+        <input id="name" type="text" class="form-control" formControlName="name" placeholder="Digite o nome completo" required>
+      </div>
+  
+      <!-- Nome de Usuário -->
+      <div class="mb-3">
+        <label for="username" class="form-label">Nome de Usuário</label>
+        <input id="username" type="text" class="form-control" formControlName="username" placeholder="Digite o nome de usuário" required>
+      </div>
+  
+      <!-- Campo de Senha -->
+      <div class="mb-3 position-relative">
+        <label for="password" class="form-label">Senha</label>
+        <input 
+          id="password" 
+          [type]="passwordVisible ? 'text' : 'password'" 
+          class="form-control" 
+          formControlName="password" 
+          placeholder="Digite a senha" 
+          required
+        />
+        <i 
+          class="bi" 
+          [ngClass]="passwordVisible ? 'bi-eye-slash' : 'bi-eye'"
+          (click)="togglePasswordVisibility('password')" 
+          style="position: absolute; right: 10px; top: 75%; transform: translateY(-50%); cursor: pointer;">
+        </i>
+      </div>
+  
+      <!-- Campo Confirmar Senha -->
+      <div class="mb-3 position-relative">
+        <label for="confirmPassword" class="form-label">Confirmar Senha</label>
+        <input 
+          id="confirmPassword" 
+          [type]="confirmPasswordVisible ? 'text' : 'password'" 
+          class="form-control" 
+          formControlName="confirmPassword" 
+          placeholder="Digite a senha novamente" 
+          required
+        />
+        <i 
+          class="bi" 
+          [ngClass]="confirmPasswordVisible ? 'bi-eye-slash' : 'bi-eye'"
+          (click)="togglePasswordVisibility('confirmPassword')" 
+          style="position: absolute; right: 10px; top: 75%; transform: translateY(-50%); cursor: pointer;">
+        </i>
+      </div>
+  
+      <!-- Campo Permissão de Acesso -->
+      <div class="mb-3">
+        <label for="role" class="form-label">Permissão de Acesso</label>
+        <select id="role" class="form-select" formControlName="role" required>
+          <option value="" disabled selected>Selecione a permissão</option>
+          <option value="admin">Permissão total ao sistema</option>
+          <option value="employee">Permissões limitadas</option>
+        </select>
+      </div>
+  
+      <!-- Botão de Registrar -->
+      <div class="text-center">
+        <button type="submit" class="btn btn-primary w-100" [disabled]="registerForm.invalid">
+          <i class="fas fa-user-plus"></i> Registrar Usuário
+        </button>
+      </div>
+    </form>
+  </div>
+  
+  <!-- Modal de Sucesso -->
+  <div *ngIf="isModalVisible" class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Sucesso</h5>
+          <button type="button" class="btn-close" aria-label="Close" (click)="closeModal()"></button>
+        </div>
+        <div class="modal-body">
+          <p>{{ successMessage }}</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" (click)="closeModal()">Fechar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  </body>
+  

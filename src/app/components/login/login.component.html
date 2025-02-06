@@ -1,0 +1,39 @@
+<body>
+  <div class="login-container">
+    <h2>Login</h2>
+    <form [formGroup]="loginForm" (ngSubmit)="onLogin()">
+      <div class="form-group">
+        <i class="fas fa-user icon"></i>
+        <input type="text" id="username" formControlName="username" placeholder="Username" required>
+        <!-- Alteração aqui -->
+        <div *ngIf="loginForm.controls['username'].invalid && loginForm.controls['username'].touched" class="error-message">
+          Username é obrigatório.
+        </div>
+      </div>
+
+      <div class="form-group">
+        <i class="fas fa-lock icon"></i>
+        <input [type]="passwordVisible ? 'text' : 'password'" id="password" formControlName="password" placeholder="Password" required>
+        <i class="fas fa-eye eye-icon" (click)="togglePasswordVisibility()"></i>
+        <!-- Alteração aqui -->
+        <div *ngIf="loginForm.controls['password'].invalid && loginForm.controls['password'].touched" class="error-message">
+          Senha é obrigatória.
+        </div>
+      </div>
+  
+      <button type="submit" [disabled]="loginForm.invalid || loading">
+        <span *ngIf="loading" class="spinner"><i class="fas fa-spinner fa-spin"></i></span>
+        Login
+      </button>
+  
+      <p *ngIf="loginError" class="error-message">{{ loginError }}</p>
+      <a href="#" class="forgot-password">Esqueci a senha</a>
+    </form>
+  </div>
+
+  <div *ngIf="isAuthenticated" class="logout-container">
+    <button (click)="logout()">Logout</button>
+  </div>
+
+  <div class="custom-text">Albergue Noturno</div>
+</body>

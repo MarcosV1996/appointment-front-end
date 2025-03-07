@@ -1,0 +1,18 @@
+
+<body class="background-page-conctact">
+  <div class="container py-5 custom-container">
+    <div class="row">
+      <div class="col-md-6">
+        <img src="../../../assets/img/logo_grande.png" class="img-fluid" alt="Imagem da Empresa">
+      </div>
+      <div class="col-md-6 text-white">
+        <h2>{{ title_about }}</h2>
+        <div id="paragraphs">
+          <div *ngFor="let paragraph of allParagraphs">
+            <p>{{ paragraph }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>

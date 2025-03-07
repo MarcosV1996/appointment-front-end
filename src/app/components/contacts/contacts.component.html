@@ -1,0 +1,18 @@
+<body class="custom-body">
+    <div class="container mx-auto mt-4 custom-background">
+      <div class="row">
+        <div class="col-md-4" *ngFor="let contact of contacts">
+          <div class="card custom-card">
+            <i class="{{ contact.icone }}"></i>
+            <div class="card-body">
+              <h5 class="card-title">{{ contact.nome }}</h5>
+              <p class="card-text">{{ contact.horario }}</p>
+              <i class="fas fa-envelope"></i> Email: <a [href]="'mailto:' + contact.email">{{ contact.email }}</a><br>
+              <i class="fas fa-phone"></i> Telefone: {{ contact.telefone }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+  

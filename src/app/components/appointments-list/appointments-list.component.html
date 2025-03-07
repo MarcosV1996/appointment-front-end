@@ -1,0 +1,228 @@
+<div class="container">
+  <div class="filter-container">
+    <div class="filter-options">
+      <label for="sortBy" class="filter-label">Ordenar por:</label>
+      <select id="sortBy" (change)="onSortChange($event)" class="filter-select">
+        <option value="name-asc">Nome A-Z</option>
+        <option value="name-desc">Nome Z-A</option>
+        <option value="date-asc">Agendamentos mais antigos</option>
+        <option value="date-desc">Agendamentos mais novos</option>
+      </select>
+
+      <div class="search-container">
+        <input
+          type="text"
+          placeholder="Buscar por nome..."
+          [(ngModel)]="searchTerm"
+          (input)="onSearch()"
+        />
+        <i class="fa-solid fa-search search-icon"></i>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="vagas-disponiveis-container">
+      <p class="vagas-disponiveis-message">
+        Vagas Disponíveis: <span>{{ availableBeds }}</span>
+      </p>
+    </div>
+
+    <div *ngIf="filteredAppointments && filteredAppointments.length > 0; else noData" class="card-container">
+      <div *ngFor="let appointment of filteredAppointments" class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <div>
+            <h4 class="card-title">
+              {{ toCamelCase(appointment.name) }} {{ toCamelCase(appointment.last_name) }}
+            </h4>
+          </div>
+          <div class="photo-container">
+            <img
+              *ngIf="appointment.photo_url"
+              [src]="appointment.photo_url"
+              alt="Foto do Acolhido"
+              class="photo"
+            />
+            <ng-template #noPhoto>
+              <p><i class="fa-solid fa-camera"></i><strong> Foto:</strong> Não disponível</p>
+            </ng-template>
+          </div>
+        </div>
+        <div *ngIf="appointment && appointment.name" class="card-body">
+          
+          <div class="info-row">
+            <i class="fa-solid fa-id-card"></i>
+            <strong> CPF:</strong> {{ formatCpf(appointment.cpf) }}
+          </div>
+
+          <div class="info-row">
+            <i class="fa-solid fa-calendar-days"></i>
+            <strong> Data de Nascimento:</strong> {{ appointment.birth_date | date: 'dd/MM/yyyy' }}
+          </div>
+
+          <div class="info-row">
+            <i class="fa-solid fa-person"></i>
+            <strong> Nome da Mãe:</strong> {{ toCamelCase(appointment.mother_name) }}
+          </div>
+
+          <div class="info-row">
+            <i class="fa-solid fa-clock"></i>
+            <strong> Horário de Chegada:</strong> {{ formatTime(appointment.time) }}
+          </div>
+
+          <div class="info-row" *ngIf="appointment.additionalInfo.exit_date">
+            <i class="fa-solid fa-door-open"></i>
+            <strong> Data de Saída:</strong> {{ appointment.additionalInfo.exit_date | date: 'dd/MM/yyyy' }}
+          </div>
+
+          <div class="info-row" *ngIf="!appointment.showMore">
+            <button class="btn btn-link read-more-button" (click)="toggleShowMore(appointment)">
+              Leia Mais
+            </button>
+          </div>
+
+          <div *ngIf="appointment.showMore" class="additional-info">
+            <!-- Informações adicionais -->
+            <div class="info-row">
+              <i class="fa-solid fa-clock"></i>
+              <strong> Horário de Chegada:</strong> {{ appointment.time }}
+            </div>
+            
+            <div class="info-row">
+              <i class="fa-solid fa-map-marker-alt"></i>
+              <strong> Estado:</strong> {{ getStateName(+appointment.state) }}
+            </div>
+            
+            <div class="info-row">
+              <i class="fa-solid fa-map-signs"></i>
+              <strong> Cidade:</strong> {{ getCityName(+appointment.city) }}
+           </div>
+            
+            <div class="info-row">
+              <i class="fa-solid fa-phone"></i>
+              <strong> Telefone:</strong> {{ formatPhoneNumber(appointment.phone) }}
+            </div>
+
+            <div class="info-row">
+              <i class="fa-solid fa-venus-mars"></i>
+              <strong> Gênero:</strong> {{ getGenderLabel(appointment.gender) }}
+            </div>
+
+            <div class="info-row">
+              <i class="fa-solid fa-palette"></i>
+              <strong> Etnia:</strong> {{ appointment.additionalInfo.ethnicity || 'Não informado' }}
+            </div>
+
+            <div class="info-row">
+              <i class="fa-solid fa-smoking"></i>
+              <strong> Vícios:</strong> {{ appointment.additionalInfo.addictions || 'Não informado' }}
+            </div>
+
+            <div class="info-row">
+              <i class="fa-solid fa-people-arrows"></i>
+              <strong> Está Acompanhado?:</strong> {{ appointment.additionalInfo.is_accompanied ? 'Sim' : 'Não' }}
+            </div>
+            
+            <div class="info-row">
+              <i class="fa-solid fa-hand-holding-heart"></i>
+              <strong> Benefícios:</strong> {{ formatLabel(appointment.additionalInfo.benefits) }}
+            </div>
+           
+            <div class="info-row">
+              <i class="fa-solid fa-baby"></i>
+              <strong> Lactante:</strong> {{ appointment.additionalInfo.is_lactating ? 'Sim' : 'Não' }}
+            </div>
+
+            <div class="info-row">
+              <i class="fa-solid fa-wheelchair"></i>
+              <strong> Possui Deficiência?:</strong> {{ appointment.additionalInfo.has_disability ? 'Sim' : 'Não' }}
+            </div>
+
+            <div class="info-row">
+              <i class="fa-solid fa-heart-circle-check"></i>
+              <strong> Motivo do Acolhimento:</strong> {{ appointment.additionalInfo.reason_for_accommodation || 'Não informado' }}
+            </div>
+
+            <div class="info-row">
+              <i class="fa-solid fa-praying-hands"></i>
+              <strong> Religião:</strong> {{ appointment.additionalInfo.religion || 'Não informado' }}
+            </div>
+
+            <div class="info-row">
+              <i class="fa-solid fa-stethoscope"></i>
+              <strong> Doença Crônica:</strong> {{ appointment.additionalInfo.chronic_disease || 'Não informado' }}
+            </div>
+
+            <div class="info-row">
+              <i class="fa-solid fa-graduation-cap"></i>
+              <strong> Nível de Educação:</strong> {{ formatLabel(appointment.additionalInfo.education_level) }}
+            </div>
+
+            <div class="info-row">
+              <i class="fa-solid fa-flag"></i>
+              <strong> Nacionalidade:</strong> {{ appointment.additionalInfo.nationality || 'Não informado' }}
+            </div>
+
+            <div class="info-row">
+              <i class="fa-solid fa-hourglass-half"></i>
+              <strong> Duração da Estadia (dias):</strong> {{ appointment.additionalInfo.stay_duration || 'Não informado' }}
+            </div>
+
+            <div class="info-row">
+              <i class="fa-solid fa-pencil-alt"></i>
+              <strong>Observações:</strong> {{ appointment.observation || 'Não informado' }}
+            </div>
+
+            <div class="info-row">
+              <i class="fa-solid fa-bed"></i>
+              <strong> Quarto:</strong> {{ appointment.additionalInfo.roomDisplayName }}
+            </div>
+
+            <div class="info-row">
+              <i class="fa-solid fa-bed"></i>
+              <strong> Cama:</strong> {{ appointment.additionalInfo.bedDisplayName }}
+            </div>
+
+            <div class="info-row">
+              <button class="btn btn-link read-more-button" (click)="toggleShowMore(appointment)">
+                Leia Menos
+              </button>
+            </div>
+            
+          </div>
+
+          <div class="action-buttons">
+            <button class="btn edit-button" (click)="editAppointment(appointment)">Editar</button>
+            <button *ngIf="!appointment.isHidden" class="btn hide-button" (click)="openHideModal(appointment)">
+              Saída de acolhimento
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <ng-template #noData>
+      <p class="no-data-message">Nenhum agendamento encontrado.</p>
+    </ng-template>
+  </div>
+</div>
+
+<!-- Modal de Confirmação de Ocultação -->
+<div class="modal fade show d-block" id="confirmHideModal" tabindex="-1" role="dialog" *ngIf="isHideModalOpen">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Confirmar saída do acolhimento</h5>
+        <button type="button" class="close" (click)="closeHideModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Você tem certeza que deseja remover o acolhido?git push origin main
+</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeHideModal()">Cancelar</button>
+        <button class="btn btn-danger" (click)="confirmHide()">Confirmar</button>
+      </div>
+    </div>
+  </div>
+</div>

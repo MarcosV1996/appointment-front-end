@@ -1,0 +1,19 @@
+<!-- ID12: O aluno criou comunicação entre componentes não relacionados hierarquivamente por
+meio de serviços através do mecanismo de injeção de dependência, compartilhando lógica ou
+informações. -->
+
+<div class="container mt-5">
+  <app-filter></app-filter>
+  <h1>Nossos Parceiros</h1>
+
+  <div class="row">
+    <div *ngFor="let partner of filteredPartners" class="col-md-4 col-sm-6 mb-4">
+      <div class="card">
+        <div class="card-body text-center">
+          <h5 class="card-title">{{ partner.name }}</h5>
+          <img [src]="partner.image" class="card-img-top" [alt]="partner.name">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

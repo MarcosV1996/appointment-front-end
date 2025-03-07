@@ -1,0 +1,287 @@
+<div class="container-fluid">
+  <div class="form-container">
+    <h2 class="text-center">Agendamento</h2>
+
+    <div class="rules-container">
+      <button class="btn btn-link" (click)="openRulesModal(rulesContent)">
+        Ler as regras
+        <span class="info-icon">
+          <i class="fas fa-question-circle"></i>
+          <span class="tooltip-text">
+            Clique aqui para ler as regras e instruções importantes sobre a reserva.
+          </span>
+        </span>
+      </button>
+    </div>
+
+    <form [formGroup]="registerForm" (ngSubmit)="onSubmit(content)">
+      <div class="form-group row">
+        <div class="col-md-6">
+          <label for="name">Nome:</label>
+          <input type="text" class="form-control" id="name" formControlName="name" placeholder="Digite seu nome" (input)="formatName('name')">
+          <div *ngIf="registerForm.get('name')?.invalid && (registerForm.get('name')?.dirty || registerForm.get('name')?.touched)" class="text-danger">
+            Nome é obrigatório.
+          </div>
+        </div>
+        <div class="col-md-6">
+          <label for="last_name">Sobrenome:</label>
+          <input type="text" class="form-control" id="last_name" formControlName="last_name" placeholder="Digite seu sobrenome" (input)="formatName('last_name')">
+          <div *ngIf="registerForm.get('last_name')?.invalid && (registerForm.get('last_name')?.dirty || registerForm.get('last_name')?.touched)" class="text-danger">
+            Sobrenome é obrigatório.
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group row">
+        <div class="col-md-6">
+          <label for="cpf">CPF:
+            <span class="info-icon">
+              <i class="fas fa-question-circle"></i>
+              <span class="tooltip-text">
+                O CPF é necessário para identificar unicamente o usuário no sistema.
+              </span>
+            </span>
+          </label>
+          <input type="text" class="form-control" id="cpf" formControlName="cpf" mask="000.000.000-00">
+          <div *ngIf="registerForm.get('cpf')?.invalid && (registerForm.get('cpf')?.dirty || registerForm.get('cpf')?.touched)" class="text-danger">
+            CPF inválido.
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <label for="birth_date">Data de nascimento:</label>
+          <input type="date" class="form-control" id="birth_date" formControlName="birth_date">
+          <div *ngIf="registerForm.get('birth_date')?.invalid && (registerForm.get('birth_date')?.dirty || registerForm.get('birth_date')?.touched)" class="text-danger">
+            Data de nascimento é obrigatória e você não pode ser menor de idade.
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group row">
+        <div class="col-md-6">
+          <label for="mother_name">Nome da mãe:
+            <span class="info-icon">
+              <i class="fas fa-question-circle"></i>
+              <span class="tooltip-text">
+                O nome da mãe é utilizado para referência de identificação.
+              </span>
+            </span>
+          </label>
+          <input type="text" class="form-control" id="mother_name" formControlName="mother_name" placeholder="Digite o nome de sua mãe">
+          <div *ngIf="registerForm.get('mother_name')?.invalid && (registerForm.get('mother_name')?.dirty || registerForm.get('mother_name')?.touched)" class="text-danger">
+            Nome da mãe é obrigatório.
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <label for="gender">Gênero:</label>
+          <select class="form-control" id="gender" formControlName="gender">
+            <option value="">Selecione um gênero</option>
+            <option value="male">Masculino</option>
+            <option value="female">Feminino</option>
+            <option value="other">Outro</option>
+          </select>
+          <div *ngIf="registerForm.get('gender')?.invalid && (registerForm.get('gender')?.dirty || registerForm.get('gender')?.touched)" class="text-danger">
+            Gênero é obrigatório.
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group row">
+        <div class="col-md-6">
+          <label for="arrival_date">Data de Chegada:</label>
+          <input 
+            type="date" 
+            class="form-control" 
+            id="arrival_date" 
+            formControlName="arrival_date" 
+            [min]="minArrivalDate" 
+            [max]="maxArrivalDate">
+          <div *ngIf="registerForm.get('arrival_date')?.invalid && (registerForm.get('arrival_date')?.dirty || registerForm.get('arrival_date')?.touched)" class="text-danger">
+            Data de chegada é obrigatória.
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <label for="time">Hora de chegada:
+            <span class="info-icon">
+              <i class="fas fa-question-circle"></i>
+              <span class="tooltip-text">
+                Tente chegar pelo menos 10 minutos antes do horário marcado.
+              </span>
+            </span>
+          </label>
+          <input type="time" class="form-control" id="time" formControlName="time">
+          <div *ngIf="registerForm.get('time')?.invalid && (registerForm.get('time')?.dirty || registerForm.get('time')?.touched)" class="text-danger">
+            Hora é obrigatória.
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <label for="state">Estado:</label>
+        <select 
+          class="form-control" 
+          id="state" 
+          formControlName="state" 
+          [disabled]="isForeign" 
+          (change)="onStateChange($event)">
+          <option value="">Selecione um estado</option>
+          <option *ngFor="let state of states" [value]="state.id">
+            {{ state.nome }}
+          </option>
+        </select>
+      </div>
+
+      <div class="col-md-6">
+        <label for="city">Cidade:</label>
+        <select 
+          class="form-control" 
+          id="city" 
+          formControlName="city" 
+          [disabled]="isForeign || cidades.length === 0">
+          <option value="">Selecione uma cidade</option>
+          <option *ngFor="let city of cidades" [value]="city.id">
+            {{ city.nome }}
+          </option>
+        </select>
+      </div>
+      
+      <div class="form-group row align-items-center">
+        <div class="col-md-6 d-flex align-items-center">
+          <input 
+          type="checkbox" 
+          class="form-check-input me-2" 
+          id="foreignCountryCheck" 
+          formControlName="foreignCountry" 
+          (change)="toggleLocationFields($event)">
+        
+          <label class="form-check-label mb-0" for="foreignCountryCheck">País estrangeiro</label>
+        </div>
+      </div>
+
+      <div class="form-group row">
+        <div class="col-md-12">
+          <label for="phone">Telefone:
+            <span class="info-icon">
+              <i class="fas fa-question-circle"></i>
+              <span class="tooltip-text">
+                O telefone é importante para contato em caso de emergência.
+              </span>
+            </span>
+          </label>
+      
+          <input type="text" class="form-control" id="phone" formControlName="phone"
+          placeholder="(00) 0 0000-0000"
+          [disabled]="registerForm.get('noPhone')?.value">
+      
+          <div class="form-check">
+            <input type="checkbox" class="form-check-input" id="noPhone" formControlName="noPhone">
+            <label class="form-check-label" for="noPhone">Não tenho telefone</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group row">
+        <div class="col-md-12">
+          <label for="observation">Motivo da Reserva:</label>
+          <textarea class="form-control" id="observation" formControlName="observation" rows="4" placeholder="Motivo da estadia em poucas palavras"></textarea>
+        </div>
+      </div>
+
+      <div class="form-group row">
+        <div class="col-md-12">
+          <label for="photo">Foto:</label>
+          <span class="info-icon">
+            <i class="fas fa-question-circle"></i>
+            <span class="tooltip-text">
+              Se possível, envie uma foto sua caso não possua um documento, para ajudar a confirmar que a vaga é de sua responsabilidade.            </span>
+          </span>
+          <input type="file" class="form-control-file" id="photo" (change)="onFileChange($event)"[disabled]="availableBeds === 0">
+          <div *ngIf="invalidFile" class="text-danger">
+            Arquivo inválido. Apenas arquivos .jpg, .jpeg e .png são aceitos.
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group row">
+        <div class="col-md-12">
+          <button type="submit" class="btn btn-custom" [disabled]="availableBeds === 0">Agendar</button>
+        </div>
+      </div>
+
+      <div *ngIf="errorMessage" class="alert alert-danger" role="alert">
+        {{ errorMessage }}
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal de Vagas Esgotadas -->
+<div class="modal fade show d-block" id="fullCapacityModal" tabindex="-1" role="dialog" *ngIf="isFullCapacityModalOpen">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Vagas Esgotadas</h5>
+        <button type="button" class="close" (click)="closeFullCapacityModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Infelizmente, todas as vagas estão preenchidas. Assim que houver disponibilidade, você poderá realizar um novo agendamento.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeFullCapacityModal()">Entendido</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Sucesso -->
+<ng-template #content let-modal>
+  <div class="modal-content" style="background-color: #d4edda;">
+    <div class="modal-header">
+      <h5 class="modal-title">Sucesso!</h5>
+      <button type="button" class="close" aria-label="Close" (click)="modal.dismiss('Cross click')">
+        <span aria-hidden="true">&times;</span>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p>Agendamento realizado com sucesso.</p>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-primary" (click)="modal.dismiss('Close click')">Fechar</button>
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #rulesContent let-modal>
+  <div class="modal-content">
+    <div class="modal-header">
+      <h5 class="modal-title">Regras do Albergue</h5>
+      <button type="button" class="close" aria-label="Close" (click)="modal.dismiss('Cross click')">
+        <span aria-hidden="true">&times;</span>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p>Regras importantes:</p>
+      <ul>
+        <li>Para fazer o agendamento é necessário ter CPF.</li>
+        <li>É proibida a entrada com armas de fogo, facas, objetos cortantes, bebidas alcoólicas ou substâncias ilícitas.</li>
+        <li>Solicita-se que chegue com 30 minutos de antecedência em relação ao horário agendado para facilitar o processo de acomodação.</li>
+        <li>Não é permitida a entrada após o horário limite de chegada, salvo situações previamente justificadas e aprovadas pela administração.</li>
+        <li>Mantenha os espaços limpos e organizados, respeitando as áreas comuns e os pertences de outros acolhidos.</li>
+        <li>Uso de drogas ou práticas ilícitas resultarão em expulsão imediata.</li>
+        <li>Respeite as orientações da equipe e siga as normas internas para convivência saudável.</li>
+      </ul>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" (click)="modal.dismiss('Close click')">Entendi</button>
+    </div>
+  </div>
+  
+  <style>
+    html, body {
+      background-color: #f0f8ff !important;
+    }
+  </style>
+  
+</ng-template>

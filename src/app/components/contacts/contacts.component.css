@@ -1,0 +1,109 @@
+body.custom-body {
+  font-family: Arial, sans-serif;
+  background-color: #f0f0f0;
+  margin: 0;
+  padding: 20px;
+  margin-top: 80px;
+}
+
+.custom-background {
+  background: rgba(2, 1, 1, 0.9); 
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(17, 17, 17, 0.2);
+  padding: 20px;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+}
+
+.card.custom-card {
+  background: #222;
+  border: 1px solid #dd2476;
+  color: rgba(250, 250, 250, 0.8);
+  margin-bottom: 2rem;
+  padding: 20px;
+  border-radius: 10px;
+  text-align: center;
+  transition: transform 0.3s;
+  width: 100%;
+  max-width: 300px; 
+  min-width: 250px; 
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.card.custom-card:hover {
+  transform: scale(1.05);
+}
+
+.card .fa {
+  margin-bottom: 20px;
+  color: #dd2476;
+}
+
+.card-title {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.card-subtitle {
+  font-size: 1rem;
+  margin-bottom: 1rem;
+}
+
+.card-text {
+  font-size: 1rem;
+  margin-bottom: 1rem;
+}
+
+.card a {
+  color: #dd2476;
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.card a:hover {
+  color: #fa7268;
+}
+
+.btn {
+  display: inline-block;
+  border: 2px solid transparent;
+  background: linear-gradient(to right, #dd2476, #ff512f);
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 5px;
+  text-decoration: none;
+  transition: background 0.3s, color 0.3s;
+}
+
+.btn:hover {
+  background: linear-gradient(to right, #ff512f, #dd2476);
+  color: #fff;
+}
+
+@media (max-width: 768px) {
+  .card.custom-card {
+      margin-top: 20px;
+  }
+
+  .custom-card {
+      margin-top: 20px;
+  }
+
+  .container {
+      padding: 10px;
+  }
+}
+
+@media (max-width: 576px) {
+  .card.custom-card {
+      width: 100%;
+      margin: 10px 0;
+  }
+}

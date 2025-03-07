@@ -1,0 +1,262 @@
+.agora {
+  text-decoration: none;
+}
+
+.tooltip {
+  position: absolute;
+  background-color: #333;
+  color: #fff;
+  padding: 8px;
+  border-radius: 4px;
+  margin-top: 5px;
+  z-index: 1000;
+  white-space: nowrap;
+}
+
+.form-check-input {
+  margin-right: 15px;
+}
+
+.form-group.row {
+  display: flex;
+  align-items: center;
+}
+
+.mover {
+  padding-left: 19px;
+}
+
+
+.info-icon {
+  position: relative;
+  cursor: pointer;
+  margin-left: 5px;
+  color: #000000;
+}
+
+.tooltip-text {
+  visibility: hidden;
+  width: 250px;
+  background-color: rgba(51, 51, 51, 0.8);
+  color: #fff;
+  text-align: center;
+  border-radius: 5px;
+  padding: 5px;
+  position: absolute;
+  z-index: 1;
+  bottom: 125%;
+  left: 50%;
+  margin-left: -125px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.info-icon:hover .tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}
+
+.form-container {
+  background-color: rgba(255, 255, 255, 0.8);
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  margin: 50px auto;
+  max-width: 800px;
+}
+
+h2 {
+  text-align: center;
+  color: #333;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+  padding-top: 5px;
+}
+
+label {
+  font-weight: bold;
+}
+
+.btn-custom {
+  background-color: #007bff;
+  color: white;
+  width: 100%;
+}
+
+.info-icon {
+  margin-left: 5px;
+  cursor: help;
+  padding-top: 5px;
+}
+
+.form-container {
+  margin-bottom: 50px;
+}
+
+.move-checkbox {
+  margin-left: 20px;
+}
+
+.form-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: #1077d1 !important; 
+  z-index: -1;
+}
+
+/* Faz com que o fundo azul apareça apenas no `form.component` */
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  width: 100vw;
+  background-image: url('../../../assets/img/mao4.jpg'); 
+  background-size: cover;
+  background-position: center; 
+  background-repeat: no-repeat; 
+  background-attachment: fixed; 
+}
+
+
+.container-fluid {
+  flex-grow: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.form-container {
+  background-color: rgba(255, 255, 255, 0.8);
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.btn-custom {
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+}
+
+.btn-custom:hover {
+  background-color: #0056b3;
+  background-image: url('../../../assets/img/mao3.jpg');
+}
+
+.modal-content-success {
+  background-color: #d4edda;
+  border-color: #c3e6cb;
+}
+
+.modal-content-error {
+  background-color: #f8d7da;
+  border-color: #f5c6cb;
+}
+
+.success-icon {
+  color: #28a745;
+  font-size: 48px;
+  animation: checkmark-animation 0.6s ease-out;
+}
+
+.error-icon {
+  color: #dc3545;
+  font-size: 48px;
+  animation: xmark-animation 0.6s ease-out;
+}
+
+@keyframes checkmark-animation {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes xmark-animation {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.modal-content {
+  background-color: #d4edda;
+  color: #155724;
+  border-radius: 10px;
+  border: none;
+}
+
+.modal-header, .modal-body, .modal-footer {
+  background-color: #d4edda;
+  border: none;
+}
+
+.close {
+  color: #000000;
+}
+
+.btn-primary {
+  background-color: #155724;
+  border: none;
+}
+
+.btn-primary:hover {
+  background-color: #0c3e23;
+}
+
+.ng-invalid.ng-touched {
+  border-color: red;
+}
+
+.info-icon {
+  position: relative;
+  cursor: pointer;
+  margin-left: 5px;
+  color: #000000;
+}
+
+.tooltip-text {
+  visibility: hidden;
+  width: 250px;
+  background-color: rgba(51, 51, 51, 0.8);
+  color: #fff;
+  text-align: center;
+  border-radius: 5px;
+  padding: 5px;
+  position: absolute;
+  z-index: 1;
+  bottom: 125%;
+  left: 50%;
+  margin-left: -125px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.info-icon:hover .tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}
+
+.btn:hover, .btn:focus {
+  background: #09928b !important;
+  -webkit-background-clip: none !important;
+  -webkit-text-fill-color: #ffffff !important;
+  border: none !important;
+  box-shadow: none !important;
+  text-decoration: none !important;
+}

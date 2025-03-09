@@ -4,7 +4,6 @@ import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../services/auth.service';
 import { Subscription } from 'rxjs';
 import { CommonModule } from '@angular/common';
-import * as bootstrap from 'bootstrap';
 
 @Component({
   selector: 'app-nav-bar',
@@ -13,13 +12,14 @@ import * as bootstrap from 'bootstrap';
   templateUrl: './nav-bar.component.html',
   styleUrls: ['./nav-bar.component.css'],
 })
-export class NavBarComponent implements OnInit, OnDestroy, AfterViewInit{
+export class NavBarComponent implements OnInit, OnDestroy {
   userRole: string | null = null;
   userName: string | null = null;
   userPhotoUrl: string | null = 'assets/img/default-user.png';
   private authStatusSub: Subscription | null = null;
-
   private photoBaseUrl = 'http://127.0.0.1:8000/storage/';
+
+  isMenuCollapsed = true;
 
   constructor(
     private router: Router,
@@ -50,6 +50,14 @@ export class NavBarComponent implements OnInit, OnDestroy, AfterViewInit{
     }
   }
 
+  toggleMenu() {
+    this.isMenuCollapsed = !this.isMenuCollapsed;
+  }
+
+  closeMenu() {
+    this.isMenuCollapsed = true;
+  }
+
   updateUserRole() {
     this.userRole = localStorage.getItem('userRole');
   }
@@ -74,7 +82,7 @@ export class NavBarComponent implements OnInit, OnDestroy, AfterViewInit{
     if (userId) {
       this.http.get<{ id: number, username: string, role: string, photo: string | null }>(`/api/users/${userId}`).subscribe(
         (response) => {
-          this.userName = this.capitalizeFirstLetter(response.username); 
+          this.userName = this.capitalizeFirstLetter(response.username);
           if (response.photo) {
             this.userPhotoUrl = response.photo.startsWith('http') ? response.photo : this.photoBaseUrl + response.photo;
             localStorage.setItem('userPhotoUrl', response.photo);
@@ -91,16 +99,6 @@ export class NavBarComponent implements OnInit, OnDestroy, AfterViewInit{
     }
   }
 
-  ngAfterViewInit(): void {
-    setTimeout(() => {
-      const dropdownElement = document.getElementById('usersDropdown');
-      if (dropdownElement) {
-        new bootstrap.Dropdown(dropdownElement);
-      }
-    }, 500);
-  }
-
-  // Função para capitalizar a primeira letra do nome
   capitalizeFirstLetter(name: string): string {
     return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
   }
@@ -137,15 +135,13 @@ export class NavBarComponent implements OnInit, OnDestroy, AfterViewInit{
     if (file && userId) {
       const formData = new FormData();
       formData.append('photo', file);
-  
+
       this.http.post<{ photo: string }>(`/api/users/${userId}/upload-photo`, formData).subscribe(
         (response) => {
-          // Atualiza `userPhotoUrl` com o caminho completo e adiciona um parâmetro de tempo para evitar cache
           this.userPhotoUrl = `${this.photoBaseUrl}${response.photo}?timestamp=${new Date().getTime()}`;
-          localStorage.setItem('userPhotoUrl', response.photo); // Salva o caminho da foto no localStorage
-  
-          this.cdr.detectChanges(); // Força a atualização visual
-          location.reload(); // Recarrega a página após o upload da nova foto
+          localStorage.setItem('userPhotoUrl', response.photo);
+          this.cdr.detectChanges();
+          location.reload();
         },
         (error) => {
           console.error('Erro ao fazer upload da foto:', error);
@@ -155,5 +151,4 @@ export class NavBarComponent implements OnInit, OnDestroy, AfterViewInit{
       console.error("Erro: Arquivo ou ID do usuário ausente.");
     }
   }
-  
 }

@@ -1,7 +1,3 @@
-/* ID12: O aluno criou comunicação entre componentes não relacionados hierarquivamente por
- meio de serviços através do mecanismo de injeção de dependência, compartilhando lógica 
- ou informações. */
- 
 import { Component, OnInit } from '@angular/core';
 import { FilterService } from '../filter/filter.service';
 import { FilterComponent } from '../filter/filter.component';

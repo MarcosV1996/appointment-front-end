@@ -1,0 +1,45 @@
+.actions {
+    white-space: nowrap; 
+}
+
+.actions button {
+    min-width: 100px; 
+    font-size: 14px;
+}
+
+.table-responsive {
+    overflow-x: auto; 
+}
+body, html {
+    overflow-x: hidden;
+}
+
+.table-responsive {
+    overflow-x: auto;
+    max-width: 100%;
+    white-space: nowrap;
+}
+
+.table td, .table th {
+    white-space: normal; 
+    word-wrap: break-word; 
+    text-align: center; 
+    padding: 8px; 
+}
+
+.table th, .table td {
+    min-width: 120px; 
+}
+
+.actions {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.actions button {
+    min-width: 90px;
+    font-size: 14px;
+    padding: 5px 10px; 
+}

@@ -34,9 +34,8 @@
   background: #030303 !important;
 } 
 
-
 .btn:hover, .btn:focus {
-      background: var(--gradient) !important;
+  background: var(--gradient) !important;
   -webkit-background-clip: none !important;
   -webkit-text-fill-color: #fff !important;
   border: 5px solid #fff !important; 
@@ -212,7 +211,7 @@ app-root {
 }
 
 .content {
-  flex-grow: 1;  /* Faz o conteúdo expandir para empurrar o rodapé para baixo */
+  flex-grow: 1; 
 }
 
 .footer {

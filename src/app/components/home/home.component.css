@@ -1,3 +1,46 @@
 ola {
     padding-top: 150px;
 }
+
+  .carousel {
+        max-width: 100%;
+        height: auto;
+    }
+  
+  .carousel-caption {
+    position: absolute;
+    bottom: 20%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    text-align: center;
+    padding: 10px;
+    border-radius: 10px;
+  }
+  
+  .carousel-title {
+    font-size: 2vw;
+    font-weight: bold;
+    color: white;
+  }
+  
+  .carousel-text {
+    font-size: 1.5vw;
+    color: white;
+  }
+  
+  @media (max-width: 768px) {
+    .carousel-caption {
+      bottom: 10%;
+      width: 90%;
+    }
+  
+    .carousel-title {
+      font-size: 4vw;
+    }
+  
+    .carousel-text {
+      font-size: 3vw;
+    }
+  }
+  

@@ -1,3 +1,6 @@
+body {
+  padding-top: 50px;
+}
 .navbar-nav {
   align-items: center;
 }
@@ -162,4 +165,234 @@ body {
 .margin {
   padding-top: -450px;
 }
+}
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.3);
+  width: 320px;
+  text-align: center;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 15px;
+}
+.navbar-nav {
+  display: flex;
+  flex-wrap: nowrap; 
+  justify-content: flex-start; 
+  align-items: center;
+}
+
+.navbar-nav .nav-link,
+.navbar-nav .dropdown-toggle,
+.navbar-nav .dropdown-item {
+  color: white !important;
+  padding: 8px 12px;
+  text-align: center; 
+}
+
+
+.navbar-nav .dropdown-menu {
+  background-color: #212529 !important; 
+}
+
+.navbar-nav .dropdown-item {
+  color: white !important; 
+}
+
+.navbar-nav .dropdown-item:hover {
+  background-color: #343a40; 
+}
+
+@media (max-width: 992px) {
+  .navbar-nav {
+    flex-direction: column; 
+    align-items: flex-start; 
+  }
+
+  .navbar-nav .nav-item {
+    width: 100%; 
+    text-align: left; 
+  }
+}
+
+.login-button {
+  background-color: #1a73e8;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 5px;
+  border: none;
+}
+
+.login-button:hover {
+  background-color: #1666cc;
+}
+
+.navbar {
+  padding: 0.5rem 1rem;
+  margin-bottom: 0;
+}
+
+.navbar-nav {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  align-items: center;
+  margin-left: auto; 
+}
+
+.navbar-nav .nav-item {
+  white-space: nowrap;
+  margin-right: 15px;
+}
+
+.navbar-nav .dropdown-menu {
+  background-color: #212529;
+}
+
+.navbar-nav .nav-link,
+.navbar-nav .dropdown-toggle {
+  color: white !important;
+  padding: 8px 12px;
+  text-align: center;
+}
+
+.user-dropdown {
+  margin-left: 10px;
+}
+
+.user-dropdown-menu {
+  background-color: #212529;
+}
+
+@media (max-width: 992px) {
+  .navbar-nav {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .navbar-nav .nav-item {
+    width: 100%;
+    text-align: center; 
+    margin-right: 0; 
+  }
+  
+  .navbar-nav .dropdown-menu {
+    position: static !important;
+    background-color: #212529;
+    box-shadow: none;
+    border: none;
+  }
+}
+
+.login-button {
+  background-color: #1a73e8;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 5px;
+  border: none;
+}
+
+.login-button:hover {
+  background-color: #1666cc;
+}
+
+.user-photo {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  margin-right: 5px;
+}
+
+.navbar {
+  padding: 0.5rem 1rem;
+  margin-bottom: 0;
+}
+
+.navbar-nav {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: flex-start; 
+  align-items: center; 
+  margin-left: auto; 
+}
+
+.navbar-nav .nav-item {
+  white-space: nowrap;
+  margin-right: 15px;
+}
+
+.navbar-nav .dropdown-menu {
+  background-color: #212529;
+}
+
+.navbar-nav .nav-link,
+.navbar-nav .dropdown-toggle {
+  color: white !important;
+  padding: 8px 12px;
+  text-align: center;
+}
+
+.user-dropdown {
+  margin-left: 10px;
+}
+
+.user-dropdown-menu {
+  background-color: #212529;
+}
+
+@media (max-width: 992px) {
+  .navbar-nav {
+    flex-direction: column;
+    align-items: center; 
+  }
+
+  .navbar-nav .nav-item {
+    width: 100%;
+    text-align: center; 
+    margin-right: 0; 
+  }
+  
+  .navbar-nav .dropdown-menu {
+    position: static !important;
+    background-color: #212529;
+    box-shadow: none;
+    border: none;
+  }
+}
+
+.login-button {
+  background-color: #1a73e8;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 5px;
+  border: none;
+}
+
+.login-button:hover {
+  background-color: #1666cc;
+}
+
+.user-photo {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  margin-right: 5px;
 }

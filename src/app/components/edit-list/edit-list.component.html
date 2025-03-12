@@ -91,6 +91,21 @@
         </div>
       </div>
       
+      <div class="col-lg-4 col-md-6 col-sm-12 form-group">
+        <label for="accommodation_mode" class="label-bold">Modalidade de Acolhimento</label>
+        <select 
+          id="accommodation_mode" 
+          [(ngModel)]="appointment.accommodation_mode" 
+          name="accommodation_mode" 
+          class="form-control form-control-lg" 
+          required
+        >
+          <option value="">Selecione</option>
+          <option value="24_horas">24 horas</option>
+          <option value="pernoite">Pernoite</option>
+        </select>
+      </div>
+      
       <div class="row mb-4">
         <div class="col-lg-4 col-md-6 col-sm-12 form-group">
           <label for="phone" class="label-bold">Telefone</label>

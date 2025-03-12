@@ -206,6 +206,7 @@ export class EditListComponent implements OnInit {
       state: '',
       city: '',
       phone: '',
+      accommodation_mode: '',
       observation: '',
       photo: null,
       gender: '',

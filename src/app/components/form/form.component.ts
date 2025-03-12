@@ -114,6 +114,7 @@ export class FormComponent implements OnInit {
       time: ['', Validators.required],
       state: ['', Validators.required], 
       city: ['', Validators.required],  
+      accommodation_mode: ['', Validators.required],
       phone: ['', [
         Validators.pattern(/^\(\d{2}\)\s?9\d{4}-\d{4}$/)
       ]],  
@@ -361,7 +362,6 @@ onSubmit(content: TemplateRef<any>): void {
       return;
     }
 
-    // O campo "state" nunca será null
     if (this.registerForm.get('foreignCountry')?.value) {
       this.registerForm.get('state')?.setValue('Estrangeiro');
       this.registerForm.get('city')?.setValue('Não se aplica');
@@ -370,11 +370,9 @@ onSubmit(content: TemplateRef<any>): void {
       return;
     }
 
-    // Remove caracteres indesejados do CPF
     const cpfValue = this.registerForm.get('cpf')?.value.replace(/\D/g, '');
     this.registerForm.patchValue({ cpf: cpfValue });
 
-    // Remove telefone se "Não tenho telefone" estiver marcado
     if (this.registerForm.get('noPhone')?.value) {
       this.registerForm.patchValue({ phone: null });
     }
@@ -400,7 +398,19 @@ onSubmit(content: TemplateRef<any>): void {
     formData.append('phone', this.registerForm.get('phone')?.value || '');
     formData.append('observation', this.registerForm.get('observation')?.value || '');
 
-    // Se o usuário escolheu uma nova foto, adiciona ao FormData
+    // 🔹 **Correção do campo "accommodation_mode"**
+    const accommodationMap: { [key: string]: string } = {
+      'Acolhimento 24 horas': '24_horas',
+      'Pernoite': 'pernoite',
+    };
+
+    const selectedAccommodation = this.registerForm.get('accommodation_mode')?.value;
+    const mappedAccommodation = accommodationMap[selectedAccommodation] || selectedAccommodation || 'pernoite';
+
+    // 🔹 **Aqui está a correção**
+    formData.append('accommodation_mode', mappedAccommodation); // Backend espera "accommodation_mode"
+
+    // Adiciona a foto se houver
     if (this.selectedFile) {
       const fileType = this.selectedFile.type;
       if (fileType === 'image/jpeg' || fileType === 'image/png' || fileType === 'image/jpg') {
@@ -410,7 +420,6 @@ onSubmit(content: TemplateRef<any>): void {
         return;
       }
     } else {
-      // Se não houver uma nova foto, mantém a foto antiga
       const existingPhoto = this.registerForm.get('photo')?.value;
       if (existingPhoto) {
         formData.append('photo', existingPhoto);
@@ -430,7 +439,6 @@ onSubmit(content: TemplateRef<any>): void {
         },
         error: (error) => {
           if (error.status === 409) {
-            // Tratamento para CPF duplicado
             if (confirm('Já existe um agendamento com este CPF. Deseja substituir?')) {
               formData.append('replace', 'true');
               this.http.post('http://127.0.0.1:8000/api/appointments', formData, {
@@ -459,6 +467,7 @@ onSubmit(content: TemplateRef<any>): void {
   }
 }
 
+
 private formatDates(): void {
   const formattedBirthDate = new Date(this.registerForm.get('birth_date')?.value).toISOString().split('T')[0];
   this.registerForm.patchValue({ birth_date: formattedBirthDate });
@@ -482,6 +491,9 @@ private prepareFormData(): FormData {
   formData.append('city', this.getCityName(this.registerForm.get('city')?.value));
   formData.append('phone', this.registerForm.get('phone')?.value || ''); // Valor padrão
   formData.append('observation', this.registerForm.get('observation')?.value || ''); // Valor padrão
+  formData.append('accommodation_mode', this.registerForm.get('accommodation_mode')?.value || '');
+
+  console.log('Modalidade de Acolhimento:', this.registerForm.get('accommodation_mode')?.value);
 
   if (this.selectedFile) {
     formData.append('photo', this.selectedFile, this.selectedFile.name);
@@ -496,8 +508,8 @@ private submitToApi(formData: FormData, content: TemplateRef<any>, token: string
   }).subscribe({
     next: () => {
       this.successMessage = this.ERROR_MESSAGES.registrationSuccess;
-      this.registerForm.reset();
-      this.loadAvailableBeds(); 
+/*       this.registerForm.reset();
+ */      this.loadAvailableBeds(); 
       this.openSuccessModal(content); 
     },
     error: (error) => {

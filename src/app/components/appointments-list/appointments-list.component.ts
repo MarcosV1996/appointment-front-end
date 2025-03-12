@@ -69,7 +69,7 @@ export class AppointmentsListComponent implements OnInit {
     this.states.forEach(state => {
       this.ibgeService.getCidadesPorEstado(state.id).subscribe({
         next: (cidades) => {
-          this.cidades = [...this.cidades, ...cidades]; // 🔥 Adiciona todas as cidades ao array
+          this.cidades = [...this.cidades, ...cidades]; 
         },
       });
     });
@@ -77,14 +77,14 @@ export class AppointmentsListComponent implements OnInit {
   
 
   getStateName(stateId: string | number): string {
-    const id = Number(stateId); // 🔥 Converte para número
+    const id = Number(stateId); 
     const estado = this.states.find(e => e.id === id);
     return estado ? estado.nome : 'Desconhecido';
   }
   
 
   getCityName(cityId: string | number): string {
-    const id = Number(cityId); // 🔥 Converte para número
+    const id = Number(cityId); 
     const cidade = this.cidades.find(c => c.id === id);
     
     if (!cidade) {
@@ -106,17 +106,22 @@ export class AppointmentsListComponent implements OnInit {
   loadAppointments(): void {
     this.appointmentsService.getAppointments().subscribe({
       next: (data: Appointment[]) => {
+        console.log('Dados recebidos do backend:', data); // Depuração
+  
         this.appointments = data.map((appointment) => {
+          console.log('Acomodação recebida:', appointment.accommodation_mode); // Depuração
+  
           if (appointment.photo && typeof appointment.photo === 'string') {
             if (!appointment.photo.startsWith('http')) {
               appointment.photo_url = `http://127.0.0.1:8000/storage/${appointment.photo}`;
             } else {
-              appointment.photo_url = appointment.photo; // Caso já esteja completa
+              appointment.photo_url = appointment.photo; 
             }
-            console.log(`Foto carregada: ${appointment.photo_url}`);
           }
   
-          // Garante que additionalInfo sempre exista
+          // Certifica que `accommodation_mode` está presente
+          appointment.accommodation_mode = appointment.accommodation_mode || 'overnight';
+  
           if (!appointment.additionalInfo) {
             appointment.additionalInfo = {
               ethnicity: '',
@@ -138,9 +143,9 @@ export class AppointmentsListComponent implements OnInit {
             };
           }
   
-          // Adiciona os nomes do quarto e da cama com validação de null
-          appointment.additionalInfo.roomDisplayName = appointment.additionalInfo.room_id !== null
-            ? this.roomNames[appointment.additionalInfo.room_id]
+          // Adiciona os nomes do quarto e da cama corretamente
+          appointment.additionalInfo.roomDisplayName = appointment.additionalInfo.room_id
+            ? this.roomNames[appointment.additionalInfo.room_id] || 'Desconhecido'
             : 'Não alocado';
   
           appointment.additionalInfo.bedDisplayName = appointment.additionalInfo.bed_id
@@ -150,15 +155,23 @@ export class AppointmentsListComponent implements OnInit {
           return appointment;
         });
   
-        // Filtra os agendamentos visíveis
         this.filteredAppointments = this.appointments.filter((a) => !a.isHidden);
-  
         this.calculateAvailableBeds();
       },
       error: (err) => console.error('Erro ao carregar agendamentos:', err),
     });
   }
   
+  
+  getAccommodationLabel(mode: string): string {
+    const labels: { [key: string]: string } = {
+      '24_horas': '24 Horas',
+      'pernoite': 'Pernoite',
+    };
+    return labels[mode] || 'Desconhecido';
+  }
+  
+
   getGenderLabel(gender: string): string {
     const genderMap: { [key: string]: string } = {
       male: 'Masculino',

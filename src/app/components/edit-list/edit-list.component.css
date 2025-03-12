@@ -135,7 +135,7 @@ button[type="submit"]:hover {
 }
 
 .select-wrapper::after {
-  content: '\25BC';         /* Símbolo do ícone de dropdown (seta para baixo) */
+  content: '\25BC';        
   position: absolute;
   right: 10px;            
   top: 50%;
@@ -215,7 +215,7 @@ textarea.form-control-lg {
 .btn:hover, .btn:focus {
   background: #09928b !important; 
   -webkit-background-clip: none !important;
-  -webkit-text-fill-color: #ffffff !important; /* Cor do texto branca */
+  -webkit-text-fill-color: #ffffff !important; 
   border: none !important;
   box-shadow: none !important; 
   text-decoration: none !important;

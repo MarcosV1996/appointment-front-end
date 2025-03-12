@@ -15,39 +15,29 @@
     </div>
 
     <form [formGroup]="registerForm" (ngSubmit)="onSubmit(content)">
+      <!-- Linha 1 -->
       <div class="form-group row">
         <div class="col-md-6">
           <label for="name">Nome:</label>
           <input type="text" class="form-control" id="name" formControlName="name" placeholder="Digite seu nome" (input)="formatName('name')">
-          <div *ngIf="registerForm.get('name')?.invalid && (registerForm.get('name')?.dirty || registerForm.get('name')?.touched)" class="text-danger">
-            Nome é obrigatório.
-          </div>
         </div>
         <div class="col-md-6">
           <label for="last_name">Sobrenome:</label>
           <input type="text" class="form-control" id="last_name" formControlName="last_name" placeholder="Digite seu sobrenome" (input)="formatName('last_name')">
-          <div *ngIf="registerForm.get('last_name')?.invalid && (registerForm.get('last_name')?.dirty || registerForm.get('last_name')?.touched)" class="text-danger">
-            Sobrenome é obrigatório.
-          </div>
         </div>
       </div>
-
+    
+      <!-- Linha 2 -->
       <div class="form-group row">
         <div class="col-md-6">
           <label for="cpf">CPF:
             <span class="info-icon">
               <i class="fas fa-question-circle"></i>
-              <span class="tooltip-text">
-                O CPF é necessário para identificar unicamente o usuário no sistema.
-              </span>
+              <span class="tooltip-text">O CPF é necessário para identificar unicamente o usuário no sistema.</span>
             </span>
           </label>
           <input type="text" class="form-control" id="cpf" formControlName="cpf" mask="000.000.000-00">
-          <div *ngIf="registerForm.get('cpf')?.invalid && (registerForm.get('cpf')?.dirty || registerForm.get('cpf')?.touched)" class="text-danger">
-            CPF inválido.
-          </div>
         </div>
-
         <div class="col-md-6">
           <label for="birth_date">Data de nascimento:</label>
           <input type="date" class="form-control" id="birth_date" formControlName="birth_date">
@@ -56,23 +46,18 @@
           </div>
         </div>
       </div>
-
+        
+      <!-- Linha 3 -->
       <div class="form-group row">
         <div class="col-md-6">
           <label for="mother_name">Nome da mãe:
             <span class="info-icon">
               <i class="fas fa-question-circle"></i>
-              <span class="tooltip-text">
-                O nome da mãe é utilizado para referência de identificação.
-              </span>
+              <span class="tooltip-text">O nome da mãe é utilizado para referência de identificação.</span>
             </span>
           </label>
-          <input type="text" class="form-control" id="mother_name" formControlName="mother_name" placeholder="Digite o nome de sua mãe">
-          <div *ngIf="registerForm.get('mother_name')?.invalid && (registerForm.get('mother_name')?.dirty || registerForm.get('mother_name')?.touched)" class="text-danger">
-            Nome da mãe é obrigatório.
-          </div>
+          <input type="text" class="form-control" id="mother_name" formControlName="mother_name">
         </div>
-
         <div class="col-md-6">
           <label for="gender">Gênero:</label>
           <select class="form-control" id="gender" formControlName="gender">
@@ -81,139 +66,107 @@
             <option value="female">Feminino</option>
             <option value="other">Outro</option>
           </select>
-          <div *ngIf="registerForm.get('gender')?.invalid && (registerForm.get('gender')?.dirty || registerForm.get('gender')?.touched)" class="text-danger">
-            Gênero é obrigatório.
-          </div>
         </div>
       </div>
-
+    
+      <!-- Linha 4 -->
       <div class="form-group row">
         <div class="col-md-6">
           <label for="arrival_date">Data de Chegada:</label>
-          <input 
-            type="date" 
-            class="form-control" 
-            id="arrival_date" 
-            formControlName="arrival_date" 
-            [min]="minArrivalDate" 
-            [max]="maxArrivalDate">
-          <div *ngIf="registerForm.get('arrival_date')?.invalid && (registerForm.get('arrival_date')?.dirty || registerForm.get('arrival_date')?.touched)" class="text-danger">
-            Data de chegada é obrigatória.
-          </div>
+          <input type="date" class="form-control" id="arrival_date" formControlName="arrival_date">
         </div>
-
         <div class="col-md-6">
           <label for="time">Hora de chegada:
             <span class="info-icon">
               <i class="fas fa-question-circle"></i>
-              <span class="tooltip-text">
-                Tente chegar pelo menos 10 minutos antes do horário marcado.
-              </span>
+              <span class="tooltip-text">Tente chegar pelo menos 10 minutos antes do horário marcado.</span>
             </span>
           </label>
           <input type="time" class="form-control" id="time" formControlName="time">
-          <div *ngIf="registerForm.get('time')?.invalid && (registerForm.get('time')?.dirty || registerForm.get('time')?.touched)" class="text-danger">
-            Hora é obrigatória.
-          </div>
         </div>
       </div>
-
-      <div class="col-md-6">
-        <label for="state">Estado:</label>
-        <select 
-          class="form-control" 
-          id="state" 
-          formControlName="state" 
-          [disabled]="isForeign" 
-          (change)="onStateChange($event)">
-          <option value="">Selecione um estado</option>
-          <option *ngFor="let state of states" [value]="state.id">
-            {{ state.nome }}
-          </option>
-        </select>
+    
+      <!-- Linha 5 -->
+      <div class="form-group row">
+        <div class="col-md-6">
+          <label for="accommodation_mode">Modalidade de Acolhimento:</label>
+          <select class="form-control" id="accommodation_mode" formControlName="accommodation_mode">
+            <option value="24_horas">Acolhimento 24 horas</option>
+            <option value="pernoite">Pernoite</option>
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label for="state">Estado:</label>
+          <select class="form-control" id="state" formControlName="state" [disabled]="isForeign" (change)="onStateChange($event)">
+            <option value="">Selecione um estado</option>
+            <option *ngFor="let state of states" [value]="state.id">{{ state.nome }}</option>
+          </select>
+        </div>
       </div>
-
-      <div class="col-md-6">
-        <label for="city">Cidade:</label>
-        <select 
-          class="form-control" 
-          id="city" 
-          formControlName="city" 
-          [disabled]="isForeign || cidades.length === 0">
-          <option value="">Selecione uma cidade</option>
-          <option *ngFor="let city of cidades" [value]="city.id">
-            {{ city.nome }}
-          </option>
-        </select>
+    
+      <!-- Linha 6 -->
+      <div class="form-group row">
+        <div class="col-md-6">
+          <label for="city">Cidade:</label>
+          <select class="form-control" id="city" formControlName="city" [disabled]="isForeign || cidades.length === 0">
+            <option value="">Selecione uma cidade</option>
+            <option *ngFor="let city of cidades" [value]="city.id">{{ city.nome }}</option>
+          </select>
+        </div>
+      
+        <div class="col-md-6 d-flex align-items-center">
+          <input type="checkbox" class="form-check-input custom-checkbox" id="foreignCountryCheck" formControlName="foreignCountry" (change)="toggleLocationFields($event)">
+          <label class="form-check-label custom-label" for="foreignCountryCheck">País estrangeiro</label>
+        </div>
       </div>
       
-      <div class="form-group row align-items-center">
-        <div class="col-md-6 d-flex align-items-center">
-          <input 
-          type="checkbox" 
-          class="form-check-input me-2" 
-          id="foreignCountryCheck" 
-          formControlName="foreignCountry" 
-          (change)="toggleLocationFields($event)">
-        
-          <label class="form-check-label mb-0" for="foreignCountryCheck">País estrangeiro</label>
-        </div>
-      </div>
-
       <div class="form-group row">
-        <div class="col-md-12">
+        <div class="col-md-6">
           <label for="phone">Telefone:
             <span class="info-icon">
               <i class="fas fa-question-circle"></i>
-              <span class="tooltip-text">
-                O telefone é importante para contato em caso de emergência.
-              </span>
+              <span class="tooltip-text">O telefone é importante para contato em caso de emergência.</span>
             </span>
           </label>
+          <input type="text" class="form-control" id="phone" formControlName="phone" placeholder="(00) 0 0000-0000" [disabled]="registerForm.get('noPhone')?.value">
+        </div>
       
-          <input type="text" class="form-control" id="phone" formControlName="phone"
-          placeholder="(00) 0 0000-0000"
-          [disabled]="registerForm.get('noPhone')?.value">
-      
-          <div class="form-check">
-            <input type="checkbox" class="form-check-input" id="noPhone" formControlName="noPhone">
-            <label class="form-check-label" for="noPhone">Não tenho telefone</label>
-          </div>
+        <div class="col-md-6 d-flex align-items-center">
+          <input type="checkbox" class="form-check-input custom-checkbox" id="noPhone" formControlName="noPhone">
+          <label class="form-check-label custom-label" for="noPhone">Não tenho telefone</label>
         </div>
       </div>
-
+      
+    
+      <!-- Linha 8 -->
       <div class="form-group row">
         <div class="col-md-12">
           <label for="observation">Motivo da Reserva:</label>
-          <textarea class="form-control" id="observation" formControlName="observation" rows="4" placeholder="Motivo da estadia em poucas palavras"></textarea>
+          <textarea class="form-control" id="observation" formControlName="observation" rows="4"></textarea>
         </div>
       </div>
-
+    
+      <!-- Linha 9 -->
       <div class="form-group row">
         <div class="col-md-12">
-          <label for="photo">Foto:</label>
-          <span class="info-icon">
-            <i class="fas fa-question-circle"></i>
-            <span class="tooltip-text">
-              Se possível, envie uma foto sua caso não possua um documento, para ajudar a confirmar que a vaga é de sua responsabilidade.            </span>
-          </span>
-          <input type="file" class="form-control-file" id="photo" (change)="onFileChange($event)"[disabled]="availableBeds === 0">
-          <div *ngIf="invalidFile" class="text-danger">
-            Arquivo inválido. Apenas arquivos .jpg, .jpeg e .png são aceitos.
-          </div>
+          <label for="photo">Foto:
+            <span class="info-icon">
+              <i class="fas fa-question-circle"></i>
+              <span class="tooltip-text">Se possível, envie uma foto sua caso não possua um documento, para ajudar a confirmar que a vaga é de sua responsabilidade.</span>
+            </span>
+          </label>
+          <input type="file" class="form-control-file" id="photo" (change)="onFileChange($event)">
         </div>
       </div>
-
+    
+      <!-- Botão -->
       <div class="form-group row">
-        <div class="col-md-12">
-          <button type="submit" class="btn btn-custom" [disabled]="availableBeds === 0">Agendar</button>
+        <div class="col-md-12 text-center">
+          <button type="submit" class="btn btn-custom">Agendar</button>
         </div>
-      </div>
-
-      <div *ngIf="errorMessage" class="alert alert-danger" role="alert">
-        {{ errorMessage }}
       </div>
     </form>
+    
   </div>
 </div>
 

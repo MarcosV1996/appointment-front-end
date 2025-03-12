@@ -1,3 +1,4 @@
+<body>
 <div class="container">
   <div class="filter-container">
     <div class="filter-options">
@@ -167,6 +168,12 @@
               <i class="fa-solid fa-hourglass-half"></i>
               <strong> Duração da Estadia (dias):</strong> {{ appointment.additionalInfo.stay_duration || 'Não informado' }}
             </div>
+            
+            <div class="info-row">
+              <i class="fa-solid fa-bed"></i>
+              <strong>Modalidade de Acolhimento:</strong> {{ getAccommodationLabel(appointment.accommodation_mode) }}
+            </div>
+            
 
             <div class="info-row">
               <i class="fa-solid fa-pencil-alt"></i>
@@ -226,3 +233,4 @@
     </div>
   </div>
 </div>
+</body>

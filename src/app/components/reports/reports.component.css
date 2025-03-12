@@ -1,6 +1,14 @@
 body {
-  padding-top: 30px;
+  padding-top: 80px;
+  background: linear-gradient(to right, #f9f9f9, #e0f7fa);
+  font-family: 'Arial', sans-serif;
+  color: #333;
+  background-image: url('../../../assets/img/relatorio.jpeg'); 
+  background-repeat: no-repeat; 
+  background-size: cover; 
+  background-attachment: fixed; 
 }
+
 
 .container {
   max-width: 1200px;

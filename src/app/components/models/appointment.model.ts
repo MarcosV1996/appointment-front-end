@@ -15,8 +15,8 @@ export interface AdditionalInfo {
   room_id: number | null;
   bed_id: number | null;
   stay_duration: number | null;
-  roomDisplayName?: string; // Nome do quarto
-  bedDisplayName?: string;  // Nome da cama
+  roomDisplayName?: string; 
+  bedDisplayName?: string;  
   exit_date?: string; 
 
 }
@@ -44,4 +44,5 @@ export interface Appointment {
   photo: string | File | null; 
   photo_url?: string; 
   additionalInfo: AdditionalInfo;
+  accommodation_mode: string;
 }

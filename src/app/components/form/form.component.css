@@ -111,7 +111,6 @@ label {
   z-index: -1;
 }
 
-/* Faz com que o fundo azul apareça apenas no `form.component` */
 :host {
   display: flex;
   flex-direction: column;
@@ -259,4 +258,15 @@ label {
   border: none !important;
   box-shadow: none !important;
   text-decoration: none !important;
+}
+
+.custom-checkbox {
+  margin-top: 25px;  
+  margin-left: 1px; 
+}
+
+.custom-label {
+  margin-left: 28px;  
+  margin-top: 25px;  
+
 }

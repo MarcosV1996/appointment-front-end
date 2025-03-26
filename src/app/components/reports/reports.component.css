@@ -9,7 +9,6 @@ body {
   background-attachment: fixed; 
 }
 
-
 .container {
   max-width: 1200px;
   margin: 0 auto;
@@ -114,9 +113,9 @@ button.btn-primary:hover {
 }
 
 .report-card {
-  flex: 1 1 calc(50% - 1.5rem); /* Cada card ocupa 50% da largura com espaçamento */
-  max-width: 45%; /* Limita o tamanho máximo */
-  min-width: 300px; /* Limita o tamanho mínimo */
+  flex: 1 1 calc(50% - 1.5rem); 
+  max-width: 45%;
+  min-width: 300px; 
 }
 
 @media (max-width: 768px) {
@@ -174,4 +173,29 @@ canvas {
   background-position: center; 
   background-repeat: no-repeat; 
   background-attachment: fixed; 
+}
+
+/* Adicione ao seu arquivo CSS */
+.report-card {
+  min-width: 300px;
+  flex: 1 1 300px;
+}
+
+.btn {
+  white-space: nowrap;
+}
+
+.dropdown-menu {
+  cursor: pointer;
+}
+
+@media (max-width: 768px) {
+  .btn {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+  }
+  
+  .dropdown-toggle::after {
+    margin-left: 0.255em;
+  }
 }

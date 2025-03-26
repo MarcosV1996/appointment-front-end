@@ -3,6 +3,10 @@ import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Chart, registerables } from 'chart.js';
+import { AuthService } from '../services/auth.service';
+import { jsPDF } from 'jspdf';
+import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 // Definição da interface para os dados de faixa etária
 interface AgeCount {
@@ -43,7 +47,7 @@ export class ReportsComponent {
   turnoCounts: { label: string; count: number }[] = [];
   bedCounts: { A: number; B: number; C: number } = { A: 0, B: 0, C: 0 };
 
-  constructor(private http: HttpClient) {
+  constructor(private http: HttpClient, private authService: AuthService) {
     Chart.register(...registerables);
   }
 
@@ -81,7 +85,6 @@ export class ReportsComponent {
   setActiveFilter(filter: string) {
     this.activeFilter = filter;
     this.isFilterApplied = true;
-
     this.applyFilters();
   }
 
@@ -89,15 +92,11 @@ export class ReportsComponent {
     this.showCharts = !this.showCharts;
 
     if (this.showCharts) {
-      // Simula o clique no botão "Ver Todos"
       this.viewAllReports();
-
-      // Após carregar os dados, renderiza os gráficos
       setTimeout(() => {
         this.renderCharts();
-      }, 500); // Adicionei um pequeno delay para garantir que os dados sejam carregados
+      }, 500);
     } else {
-      // Simula o clique no botão "Limpar Tela"
       this.resetFilters();
     }
   }
@@ -110,7 +109,60 @@ export class ReportsComponent {
     };
     return genderMap[gender] || 'Não informado';
   }
-  
+
+  saveReport(reportType: string) {
+    // Usar isLoggedIn() em vez de isAuthenticated()
+    if (!this.authService.isLoggedIn()) {
+        alert('Você precisa estar logado para salvar relatórios!');
+        return;
+    }
+
+    const reportData = {
+        type: reportType,
+        filters: {
+            room: this.filters.room,
+            gender: this.filters.gender,
+            ageGroup: this.filters.ageGroup,
+            startDate: this.filters.startDate,
+            endDate: this.filters.endDate,
+            turn: this.filters.turn
+        },
+        data: {
+            bedCounts: this.bedCounts,
+            gender_counts: this.aggregatedData.gender_counts,
+            age_counts: this.aggregatedData.age_counts,
+            turnoCounts: this.turnoCounts
+        }
+    };
+
+    this.http.post('http://localhost:8000/api/reports/save', reportData, {
+        headers: {
+            'Authorization': 'Bearer ' + this.authService.getToken(),
+            'Content-Type': 'application/json'
+        }
+    }).subscribe({
+        next: (response: any) => {
+            if (response.success) {
+                alert('Relatório salvo com sucesso!');
+            } else {
+                alert('Erro: ' + response.message);
+            }
+        },
+        error: (err) => {
+            console.error('Erro ao salvar relatório:', err);
+            let errorMessage = 'Erro ao salvar relatório';
+            
+            if (err.status === 401) {
+                errorMessage = 'Sessão expirada. Por favor, faça login novamente.';
+                this.authService.logout();
+            } else if (err.error?.message) {
+                errorMessage += ': ' + err.error.message;
+            }
+            
+            alert(errorMessage);
+        }
+    });
+}
 
   applyFilters() {
     console.log('Filtros enviados:', this.filters);
@@ -183,7 +235,7 @@ export class ReportsComponent {
     const selectedTurn = this.filters.turn;
     if (selectedTurn) {
       return Object.keys(turnoData)
-        .filter((key) => key === selectedTurn) // Apenas o turno selecionado
+        .filter((key) => key === selectedTurn)
         .map((key) => ({
           label: this.getTurnLabel(key),
           count: turnoData[key as keyof typeof turnoData],
@@ -208,6 +260,9 @@ export class ReportsComponent {
   }
 
   renderCharts() {
+    // Destrói gráficos existentes antes de renderizar novos
+    this.destroyCharts();
+    
     if (this.showCharts) {
       if (this.bedCounts.A > 0 || this.bedCounts.B > 0 || this.bedCounts.C > 0) {
         this.renderRoomChart();
@@ -227,8 +282,24 @@ export class ReportsComponent {
     }
   }
 
+  // Adiciona método para destruir gráficos existentes
+  private destroyCharts() {
+    const chartElements = ['roomChart', 'genderChart', 'ageChart', 'turnChart'];
+    chartElements.forEach(id => {
+      const chartElement = document.getElementById(id) as HTMLCanvasElement;
+      if (chartElement) {
+        const existingChart = Chart.getChart(chartElement);
+        if (existingChart) {
+          existingChart.destroy();
+        }
+      }
+    });
+  }
+
   renderRoomChart() {
     const ctx = document.getElementById('roomChart') as HTMLCanvasElement;
+    if (!ctx) return;
+
     new Chart(ctx, {
       type: 'pie',
       data: {
@@ -237,6 +308,7 @@ export class ReportsComponent {
           {
             data: [this.bedCounts.A, this.bedCounts.B, this.bedCounts.C],
             backgroundColor: ['#ff6384', '#36a2eb', '#cc65fe'],
+            borderWidth: 1
           },
         ],
       },
@@ -246,6 +318,17 @@ export class ReportsComponent {
           legend: {
             position: 'top',
           },
+          tooltip: {
+            callbacks: {
+              label: (context) => {
+                const label = context.label || '';
+                const value = context.raw as number;
+                const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
+                const percentage = Math.round((value / total) * 100);
+                return `${label}: ${value} (${percentage}%)`;
+              }
+            }
+          }
         },
       },
     });
@@ -253,15 +336,22 @@ export class ReportsComponent {
 
   renderGenderChart() {
     const ctx = document.getElementById('genderChart') as HTMLCanvasElement;
+    if (!ctx) return;
+
     new Chart(ctx, {
       type: 'bar',
       data: {
-        labels: this.aggregatedData.gender_counts.map((item) => this.getTranslatedGender(item.gender)), // Agora será em português
-     datasets: [
+        labels: this.aggregatedData.gender_counts.map((item) => this.getTranslatedGender(item.gender)),
+        datasets: [
           {
-            label: 'Por Gênero',
+            label: 'Quantidade por Gênero',
             data: this.aggregatedData.gender_counts.map((item) => item.count),
-            backgroundColor: '#42a5f5',
+            backgroundColor: [
+              '#36a2eb', // Azul para Masculino
+              '#ff6384', // Rosa para Feminino
+              '#ffce56'  // Amarelo para Outro
+            ],
+            borderWidth: 1
           },
         ],
       },
@@ -275,14 +365,26 @@ export class ReportsComponent {
         scales: {
           y: {
             beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Quantidade'
+            }
           },
-        },
+          x: {
+            title: {
+              display: true,
+              text: 'Gênero'
+            }
+          }
+        }
       },
     });
   }
 
   renderAgeChart() {
     const ctx = document.getElementById('ageChart') as HTMLCanvasElement;
+    if (!ctx) return;
+
     new Chart(ctx, {
       type: 'doughnut',
       data: {
@@ -291,7 +393,12 @@ export class ReportsComponent {
           {
             label: 'Por Faixa Etária',
             data: this.aggregatedData.age_counts.map((item) => item.count),
-            backgroundColor: ['#ff9f40', '#4bc0c0'],
+            backgroundColor: [
+              '#4bc0c0', // Turquesa para Idosos
+              '#ff9f40', // Laranja para Adultos
+              '#9966ff'  // Roxo para outras faixas (se houver)
+            ],
+            borderWidth: 1
           },
         ],
       },
@@ -301,6 +408,17 @@ export class ReportsComponent {
           legend: {
             position: 'top',
           },
+          tooltip: {
+            callbacks: {
+              label: (context) => {
+                const label = context.label || '';
+                const value = context.raw as number;
+                const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
+                const percentage = Math.round((value / total) * 100);
+                return `${label}: ${value} (${percentage}%)`;
+              }
+            }
+          }
         },
       },
     });
@@ -308,15 +426,23 @@ export class ReportsComponent {
 
   renderTurnChart() {
     const ctx = document.getElementById('turnChart') as HTMLCanvasElement;
+    if (!ctx) return;
+
     new Chart(ctx, {
       type: 'doughnut',
       data: {
         labels: this.turnoCounts.map((turno) => turno.label),
         datasets: [
           {
-            label: 'Turnos',
+            label: 'Distribuição por Turno',
             data: this.turnoCounts.map((turno) => turno.count),
-            backgroundColor: ['#ff6384', '#36a2eb', '#cc65fe', '#ffce56'],
+            backgroundColor: [
+              '#ff6384', // Manhã
+              '#36a2eb', // Tarde
+              '#cc65fe', // Noite
+              '#ffce56'  // Madrugada
+            ],
+            borderWidth: 1
           },
         ],
       },
@@ -326,6 +452,17 @@ export class ReportsComponent {
           legend: {
             position: 'top',
           },
+          tooltip: {
+            callbacks: {
+              label: (context) => {
+                const label = context.label || '';
+                const value = context.raw as number;
+                const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
+                const percentage = Math.round((value / total) * 100);
+                return `${label}: ${value} (${percentage}%)`;
+              }
+            }
+          }
         },
       },
     });
@@ -343,5 +480,206 @@ export class ReportsComponent {
     this.activeFilter = '';
     this.isFilterApplied = false;
     this.showCharts = false;
+    this.destroyCharts();
   }
-}
+
+  // Adicionado para limpeza quando o componente é destruído
+  ngOnDestroy() {
+    this.destroyCharts();
+  }
+
+  generatePDF() {
+    if (!this.authService.isLoggedIn()) {
+      alert('Você precisa estar logado para gerar PDFs!');
+      return;
+    }
+  
+    try {
+      const doc = new jsPDF();
+      
+      // Configurações iniciais
+      doc.setProperties({
+        title: 'Relatório de Acolhimentos',
+        subject: 'Relatório gerado pelo sistema',
+        author: 'Sistema de Acolhimentos',
+        keywords: 'relatório, acolhimentos, estatísticas',
+        creator: 'Sistema de Acolhimentos'
+      });
+  
+      // Título do relatório
+      doc.setFontSize(18);
+      doc.setTextColor(40);
+      doc.setFont('helvetica', 'bold');
+      doc.text('RELATÓRIO DE ACOLHIMENTOS', 105, 20, { align: 'center' });
+      
+      // Sub-título
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, 105, 28, { align: 'center' });
+  
+      // Adiciona logo (opcional)
+      // const logo = new Image();
+      // logo.src = 'assets/logo.png';
+      // doc.addImage(logo, 'PNG', 14, 10, 30, 10);
+  
+      // Variável para controlar a posição Y
+      let startY = 40;
+  
+      // 1. Dados dos quartos
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('1. OCUPAÇÃO POR QUARTO', 14, startY);
+      
+      autoTable(doc, {
+        startY: startY + 5,
+        head: [['Quarto', 'Camas Ocupadas']],
+        body: [
+          ['Quarto A', this.bedCounts.A.toString()],
+          ['Quarto B', this.bedCounts.B.toString()],
+          ['Quarto C', this.bedCounts.C.toString()],
+        ],
+        styles: {
+          halign: 'center',
+          cellPadding: 3,
+          fontSize: 10
+        },
+        headStyles: {
+          fillColor: [52, 152, 219], // Azul
+          textColor: 255, // Branco
+          fontStyle: 'bold'
+        },
+        alternateRowStyles: {
+          fillColor: [245, 245, 245]
+        }
+      });
+  
+      // Atualiza a posição Y para a próxima tabela
+      startY = (doc as any).lastAutoTable.finalY + 15;
+  
+      // 2. Dados por gênero
+      doc.setFontSize(14);
+      doc.text('2. DISTRIBUIÇÃO POR GÊNERO', 14, startY);
+      
+      autoTable(doc, {
+        startY: startY + 5,
+        head: [['Gênero', 'Quantidade']],
+        body: this.aggregatedData.gender_counts.map(item => [
+          this.getTranslatedGender(item.gender),
+          item.count.toString()
+        ]),
+        styles: {
+          halign: 'center',
+          cellPadding: 3,
+          fontSize: 10
+        },
+        headStyles: {
+          fillColor: [231, 76, 60], // Vermelho
+          textColor: 255,
+          fontStyle: 'bold'
+        },
+        alternateRowStyles: {
+          fillColor: [245, 245, 245]
+        }
+      });
+  
+      // Atualiza a posição Y para a próxima tabela
+      startY = (doc as any).lastAutoTable.finalY + 15;
+  
+      // 3. Dados por faixa etária
+      doc.setFontSize(14);
+      doc.text('3. DISTRIBUIÇÃO POR FAIXA ETÁRIA', 14, startY);
+      
+      autoTable(doc, {
+        startY: startY + 5,
+        head: [['Faixa Etária', 'Quantidade']],
+        body: this.aggregatedData.age_counts.map(item => [
+          item.group,
+          item.count.toString()
+        ]),
+        styles: {
+          halign: 'center',
+          cellPadding: 3,
+          fontSize: 10
+        },
+        headStyles: {
+          fillColor: [46, 204, 113], // Verde
+          textColor: 255,
+          fontStyle: 'bold'
+        },
+        alternateRowStyles: {
+          fillColor: [245, 245, 245]
+        }
+      });
+  
+      // Atualiza a posição Y para a próxima tabela
+      startY = (doc as any).lastAutoTable.finalY + 15;
+  
+      // 4. Dados por turno
+      doc.setFontSize(14);
+      doc.text('4. DISTRIBUIÇÃO POR TURNO', 14, startY);
+      
+      autoTable(doc, {
+        startY: startY + 5,
+        head: [['Turno', 'Quantidade']],
+        body: this.turnoCounts.map(item => [
+          item.label,
+          item.count.toString()
+        ]),
+        styles: {
+          halign: 'center',
+          cellPadding: 3,
+          fontSize: 10
+        },
+        headStyles: {
+          fillColor: [155, 89, 182], // Roxo
+          textColor: 255,
+          fontStyle: 'bold'
+        },
+        alternateRowStyles: {
+          fillColor: [245, 245, 245]
+        }
+      });
+  
+      // Adiciona número de página
+      const addPageNumbers = (doc: jsPDF) => {
+        const pageCount = doc.getNumberOfPages();
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        
+        for (let i = 1; i <= pageCount; i++) {
+          doc.setPage(i);
+          doc.text(
+            `Página ${i} de ${pageCount}`,
+            doc.internal.pageSize.width - 25,
+            doc.internal.pageSize.height - 10
+          );
+        }
+      };
+      
+      addPageNumbers(doc);
+  
+      // Gera o PDF e abre em nova aba
+      const pdfOutput = doc.output('blob');
+      const pdfUrl = URL.createObjectURL(pdfOutput);
+      
+      // Abre em nova janela com tratamento para navegadores com bloqueio de pop-up
+      const newWindow = window.open();
+      if (newWindow) {
+        newWindow.location.href = pdfUrl;
+      } else {
+        // Fallback para download direto se o pop-up for bloqueado
+        doc.save(`relatorio_acolhimentos_${new Date().toISOString().slice(0, 10)}.pdf`);
+        alert('O PDF foi baixado automaticamente devido ao bloqueio de pop-ups. Verifique sua pasta de downloads.');
+      }
+  
+      // Libera a memória do objeto URL após 5 segundos
+      setTimeout(() => {
+        URL.revokeObjectURL(pdfUrl);
+      }, 5000);
+  
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+      alert('Ocorreu um erro ao gerar o PDF. Por favor, tente novamente.');
+    }
+  }
+  }

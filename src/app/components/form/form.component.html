@@ -155,14 +155,13 @@
               <span class="tooltip-text">Se possível, envie uma foto sua caso não possua um documento, para ajudar a confirmar que a vaga é de sua responsabilidade.</span>
             </span>
           </label>
-          <input type="file" class="form-control-file" id="photo" (change)="onFileChange($event)">
-        </div>
+          <input type="file" class="form-control-file" id="photo" (change)="onFileChange($event)"[disabled]="availableBeds === 0">        </div>
       </div>
     
       <!-- Botão -->
       <div class="form-group row">
-        <div class="col-md-12 text-center">
-          <button type="submit" class="btn btn-custom">Agendar</button>
+        <div class="col-md-12">
+          <button type="submit" class="btn btn-custom" [disabled]="availableBeds === 0">Agendar</button>
         </div>
       </div>
     </form>
@@ -199,6 +198,8 @@
     </div>
     <div class="modal-body">
       <p>Agendamento realizado com sucesso.</p>
+      <p>Seu agendamento ficará pendente, até que você compareça no dia marcado.</p>
+
     </div>
     <div class="modal-footer">
       <button type="button" class="btn btn-primary" (click)="modal.dismiss('Close click')">Fechar</button>

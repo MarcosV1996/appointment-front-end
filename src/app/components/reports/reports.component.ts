@@ -681,5 +681,5 @@ export class ReportsComponent {
       console.error('Erro ao gerar PDF:', error);
       alert('Ocorreu um erro ao gerar o PDF. Por favor, tente novamente.');
     }
-  }
+   }
   }

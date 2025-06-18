@@ -1,62 +1,64 @@
-### Sistema de Gerenciamento de Vagas em Albergues (Frontend - Angular)
-https://img.shields.io/badge/Angular-DD0031?style=for-the-badge&logo=angular&logoColor=white
-https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white
+# Sistema de Gerenciamento de Vagas em Albergues (Frontend - Angular)
 
-Frontend do sistema de agendamento de vagas para pessoas em situação de vulnerabilidade social, desenvolvido em Angular 17 como parte do Trabalho de Conclusão de Curso em Tecnologia em Sistemas para Internet pela UTFPR.
+[![Angular](https://img.shields.io/badge/Angular-DD0031?style=for-the-badge&logo=angular&logoColor=white)](https://angular.io/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 
-## Contexto do Projeto
-Este projeto foi desenvolvido para substituir o sistema manual baseado em planilhas Excel utilizado pelo Albergue Noturno de Guarapuava, com os seguintes objetivos:
+Este é o **frontend de um sistema inovador para agendamento de vagas em albergues**, criado com **Angular 17**. Ele faz parte do meu Trabalho de Conclusão de Curso em Tecnologia em Sistemas para Internet na UTFPR e busca otimizar a gestão de leitos para pessoas em situação de vulnerabilidade social.
 
-Modernizar o processo de agendamento de vagas
+---
 
-Reduzir deslocamentos desnecessários de pessoas em situação de vulnerabilidade
+## Contexto do Projeto: Modernizando a Gestão de Vagas
 
-Melhorar a gestão de ocupação dos leitos
+O projeto nasceu da necessidade de **substituir o sistema manual, baseado em planilhas Excel**, utilizado pelo Albergue Noturno de Guarapuava. Nossos objetivos principais são:
 
-Gerar relatórios administrativos automáticos
+* **Modernizar** o processo de agendamento de vagas.
+* **Reduzir deslocamentos desnecessários** para pessoas em situação de vulnerabilidade.
+* **Melhorar a gestão** da ocupação dos leitos.
+* **Gerar relatórios administrativos automáticos** para um controle mais eficiente.
 
-##  Stack Tecnológica
-Frontend:
+---
 
-Angular 17
+## Stack Tecnológica
 
-TypeScript
+#### Frontend:
 
-RxJS (Programação Reativa)
+* **Angular 17**: Framework principal para construção da interface.
+* **TypeScript**: Linguagem de programação para maior escalabilidade.
+* **Chart.js**: Utilizado para a criação de gráficos interativos nos relatórios.
 
-Angular Material (UI Components)
+#### Backend:
 
-Chart.js (Gráficos)
+* **Laravel 11**: API RESTful que gerencia a lógica de negócio e o banco de dados.
+* **SQLite**: Banco de dados leve e eficiente para armazenamento das informações.
 
-Backend:
+#### Infraestrutura:
 
-Laravel 11 (API RESTful)
+* **Docker**: Para containerização das aplicações, garantindo ambientes isolados e consistentes.
+* **Docker Compose**: Orquestração dos containers, facilitando o deploy e gerenciamento do ambiente.
 
-SQLite (Banco de dados)
-
-Infraestrutura:
-
-Docker (Containerização)
-
-Docker Compose (Orquestração)
+---
 
 ## Funcionalidades Principais
-Para Acolhidos
-Agendamento online simplificado (em poucos cliques)
 
-Visualização instantânea da disponibilidade de vagas
+#### Para Acolhidos:
 
-Modal interativo com regras do albergue
+* **Agendamento online simplificado**: Em poucos cliques, é possível reservar uma vaga.
+* **Visualização instantânea** da disponibilidade de vagas.
+* **Modal interativo** com as regras do albergue, garantindo transparência.
+* **Confirmação imediata** do agendamento (pendente de confirmação presencial na chegada).
 
-Confirmação imediata do agendamento (pendente de confirmação presencial)
+#### Para Administradores:
 
-Para Administradores
-Painel administrativo com lista de agendamentos
+* **Painel administrativo** completo com lista de agendamentos.
+* **Cadastro complementar** de informações detalhadas dos acolhidos.
+* **Gerenciamento de usuários** com diferentes níveis de acesso.
+* **Geração de relatórios em PDF** e **gráficos interativos** para análise de dados.
+* **Controle preciso** da ocupação de quartos e leitos.
 
-Cadastro complementar de informações dos acolhidos
+#### Para Funcionários:
 
-Gerenciamento de usuários com diferentes níveis de acesso
+* **Validação e confirmação de agendamentos presenciais**: Processo para verificar e confirmar a chegada dos acolhidos.
+* **Atualização do status de ocupação dos leitos**: Controle em tempo real da disponibilidade.
+* **Registro e consulta de informações detalhadas dos acolhidos**: Acesso rápido a dados importantes para um atendimento personalizado.
 
-Geração de relatórios em PDF e gráficos interativos
 
-Controle preciso de ocupação de quartos e leitos

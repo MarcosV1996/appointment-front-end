@@ -1,32 +1,62 @@
+### Sistema de Gerenciamento de Vagas em Albergues (Frontend - Angular)
+https://img.shields.io/badge/Angular-DD0031?style=for-the-badge&logo=angular&logoColor=white
+https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white
 
+Frontend do sistema de agendamento de vagas para pessoas em situação de vulnerabilidade social, desenvolvido em Angular 17 como parte do Trabalho de Conclusão de Curso em Tecnologia em Sistemas para Internet pela UTFPR.
 
-## Manual de execução
+## Contexto do Projeto
+Este projeto foi desenvolvido para substituir o sistema manual baseado em planilhas Excel utilizado pelo Albergue Noturno de Guarapuava, com os seguintes objetivos:
 
-# Frontend - Sistema de Agendamento (Angular)
+Modernizar o processo de agendamento de vagas
 
-Este é o frontend do sistema de agendamento para o albergue, desenvolvido com Angular.
+Reduzir deslocamentos desnecessários de pessoas em situação de vulnerabilidade
 
-## Requisitos
+Melhorar a gestão de ocupação dos leitos
 
-- [Node.js](https://nodejs.org/) (versão 16 ou superior)
-- [Angular CLI](https://angular.io/cli) (versão mais recente)
+Gerar relatórios administrativos automáticos
 
-## Instalação
+##  Stack Tecnológica
+Frontend:
 
-### 1. **Clonar o Repositório**
+Angular 17
 
-Clone o repositório do front-end para sua máquina local.
+TypeScript
 
-```bash
-git clone https://github.com/MarcosV1996/appointment-front-end.git
+RxJS (Programação Reativa)
 
-2. Instalar as Dependências
+Angular Material (UI Components)
 
-Após clonar o repositório, instale as dependências necessárias do projeto com o comando abaixo:
+Chart.js (Gráficos)
 
-```bash
-npm install
+Backend:
 
-3. Iniciar o Servidor de Desenvolvimento
+Laravel 11 (API RESTful)
 
-ng serve
+SQLite (Banco de dados)
+
+Infraestrutura:
+
+Docker (Containerização)
+
+Docker Compose (Orquestração)
+
+## Funcionalidades Principais
+Para Acolhidos
+Agendamento online simplificado (em poucos cliques)
+
+Visualização instantânea da disponibilidade de vagas
+
+Modal interativo com regras do albergue
+
+Confirmação imediata do agendamento (pendente de confirmação presencial)
+
+Para Administradores
+Painel administrativo com lista de agendamentos
+
+Cadastro complementar de informações dos acolhidos
+
+Gerenciamento de usuários com diferentes níveis de acesso
+
+Geração de relatórios em PDF e gráficos interativos
+
+Controle preciso de ocupação de quartos e leitos

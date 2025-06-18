@@ -1,3 +1,4 @@
+/* login.component.css */
 body {
   background-image: url('../../../assets/img/fundo-login.png');
   background-size: cover;
@@ -11,17 +12,17 @@ body {
 }
 
 .login-container { 
-  border-radius: 12px;
+  background-color: rgba(255, 255, 255, 0.85);
+  border-radius: 10px;
   box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
   padding: 40px;
-  max-width: 400px;
-  width: 100%;
+  width: 350px;
   text-align: center;
 }
 
 h2 {
-  margin-bottom: 20px;
-  color: #333;
+  margin-bottom: 25px;
+  color: #2c3e50;
 }
 
 .form-group {
@@ -31,88 +32,95 @@ h2 {
 
 .form-group input {
   width: 100%;
-  padding: 10px;
-  padding-left: 40px; 
-  padding-right: 40px; 
-  border: none;
-  border-bottom: 2px solid #ddd; 
-  background-color: rgba(255, 255, 255, 0.9); 
-  color: #333; 
-  font-size: 16px;
-  outline: none; 
-}
-
-.form-group input::placeholder {
-  color: #aaa; 
+  padding: 12px 15px 12px 40px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: all 0.3s;
 }
 
 .form-group input:focus {
-  border-bottom-color: #007bff; 
+  border-color: #3498db;
+  box-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
 }
 
 .form-group .icon {
   position: absolute;
+  left: 12px;
   top: 50%;
-  left: 10px;
   transform: translateY(-50%);
-  color: #777;
+  color: #7f8c8d;
 }
 
 .form-group .eye-icon {
   position: absolute;
-  right: 10px;
+  right: 12px;
   top: 50%;
   transform: translateY(-50%);
-  color: #777;
+  color: #7f8c8d;
   cursor: pointer;
 }
 
 button {
-  width: 100%;
-  padding: 15px;
-  border-radius: 8px;
-  border: none;
-  background-color: #007bff;
+  background-color: #3498db;
   color: white;
+  border: none;
+  padding: 12px;
+  width: 100%;
+  border-radius: 4px;
   font-size: 16px;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  transition: background-color 0.3s;
+  margin-top: 10px;
+}
+
+button:hover {
+  background-color: #2980b9;
 }
 
 button:disabled {
-  background-color: #ccc;
+  background-color: #95a5a6;
   cursor: not-allowed;
 }
 
 .spinner {
-  margin-right: 10px;
+  display: inline-block;
+  margin-right: 8px;
 }
 
 .error-message {
-  color: red;
-  margin-top: 10px;
+  color: #e74c3c;
+  font-size: 13px;
+  margin-top: 5px;
+  text-align: left;
 }
 
-.forgot-password {
+.back-link {
   display: block;
-  margin-top: 10px;
-  color: #007bff;
+  text-align: center;
+  margin-top: 15px;
+  color: #3498db;
   text-decoration: none;
+  cursor: pointer;
+  font-size: 14px;
 }
 
-.forgot-password:hover {
+.back-link:hover {
   text-decoration: underline;
 }
 
 .custom-text {
-  color: #fff;
-  font-weight: bold;
   position: absolute;
   bottom: 20px;
   right: 20px;
+  color: white;
   font-size: 14px;
+  font-weight: bold;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.invalid {
+  border-color: #e74c3c !important;
 }
 
 input:-webkit-autofill {

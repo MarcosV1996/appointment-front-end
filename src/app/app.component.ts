@@ -1,4 +1,5 @@
-import { User } from './../../../appointment-backend/vendor/laravel/breeze/stubs/inertia-react-ts/resources/js/types/index.d';
+/* import { User } from './../../../appointment-backend/vendor/laravel/breeze/stubs/inertia-react-ts/resources/js/types/index.d';
+ */
 import { UserRegistrationComponent } from './components/user-registration/user-registration.component';
 import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';

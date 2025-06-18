@@ -1,9 +1,9 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewChild, OnDestroy } from '@angular/core';
 import { FormsModule, NgForm } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AppointmentService } from '../services/services2/appointments.service';
 import { Appointment } from '../models/appointment.model';
-import { HttpErrorResponse, HttpClient } from '@angular/common/http';
+import { HttpErrorResponse } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { IbgeService } from '../ibge.service';
 import { NationalityService } from '../services/services2/nationality.service';
@@ -12,7 +12,10 @@ import { NgxMaskDirective, provideNgxMask } from 'ngx-mask';
 import { NavBarComponent } from '../nav-bar/nav-bar.component';
 import { RoomService } from '../services/services2/room.service';
 import { BedService } from '../services/services2/bed.service';
-import { finalize } from 'rxjs/operators';
+import { finalize, takeUntil } from 'rxjs/operators';
+import { Subject } from 'rxjs';
+import { AuthService } from '../services/auth.service';
+import { NotificationService } from '../services/notification.service';
 
 @Component({
   selector: 'app-edit-list',
@@ -46,8 +49,9 @@ import { finalize } from 'rxjs/operators';
     ])
   ]
 })
-export class EditListComponent implements OnInit {
+export class EditListComponent implements OnInit, OnDestroy {
   @ViewChild('appointmentForm') appointmentForm!: NgForm;
+  private destroy$ = new Subject<void>();
 
   appointment: Appointment = this.initializeNewAppointment();
   estados: any[] = [];
@@ -59,9 +63,9 @@ export class EditListComponent implements OnInit {
   nacionalidades: string[] = [];
   isLoading: boolean = false;
   isSaving: boolean = false;
-  showModal: boolean = false;
-  modalMessage: string = '';
-  step: number = 1;
+  showModal: boolean = false; // Mantido para o modal genérico existente
+  modalMessage: string = ''; // Mantido para o modal genérico existente
+  showSuccessModal: boolean = false; // Propriedade para controlar o novo modal de sucesso
   currentStep: number = 1;
   errorMessage: string = '';
 
@@ -74,125 +78,26 @@ export class EditListComponent implements OnInit {
     'Câncer',
     'Outra'
   ];
- 
+
   constructor(
-    private http: HttpClient,
     private appointmentService: AppointmentService,
     private ibgeService: IbgeService,
     private nationalityService: NationalityService,
-    private roomService: RoomService,
+    private roomService: RoomService, 
     private bedService: BedService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private authService: AuthService,
+    private notificationService: NotificationService
   ) {}
 
-  isStepValid(): boolean {
-    return this.step > 0 && this.step <= 3;
-  }
-
-  public openModal(message: string) {
-    console.log('Modal aberto com mensagem:', message);
-  }
-
-  
   ngOnInit(): void {
-    try {
-      const appointmentId = Number(this.route.snapshot.paramMap.get('id'));
-      if (appointmentId) {
-        this.loadAppointment(appointmentId);
-      }
-      this.loadEstados();
-      this.loadRooms();
-      this.loadNationalities();
-      this.loadOccupiedBeds();
-    } catch (error) {
-      console.error("Erro no ngOnInit:", error);
-    }
+    this.checkAuthentication();
+    this.loadAppointmentData();
+    this.loadInitialData();
   }
 
-  loadOccupiedBeds(): void {
-    this.appointmentService.getAppointments().subscribe(
-      (appointments: Appointment[]) => {
-        this.occupiedBeds = appointments
-          .filter((app: Appointment) => app.additionalInfo && app.additionalInfo.bed_id != null)
-          .map((app: Appointment) => ({
-            bedId: app.additionalInfo.bed_id as number,
-            occupantName: `${app.name} ${app.last_name}`
-          }));
-
-        if (this.appointment.additionalInfo.room_id) {
-          this.loadBeds(this.appointment.additionalInfo.room_id);
-        }
-      },
-      (error: HttpErrorResponse) => {
-        console.error('Erro ao carregar agendamentos:', error);
-      }
-    );
-  }
-
-  loadBeds(roomId: number): void {
-    this.bedService.getBedsByRoomId(roomId).subscribe(
-      (data: any[]) => {
-        this.filteredBeds = data.map(bed => {
-          const occupiedBed = this.occupiedBeds.find(occupied => occupied.bedId === bed.id);
-          return {
-            ...bed,
-            is_available: !occupiedBed,
-            occupantName: occupiedBed ? occupiedBed.occupantName : ''
-          };
-        });
-      },
-      (error: HttpErrorResponse) => {
-        console.error("Erro ao carregar camas:", error.message);
-      }
-    );
-  }
-
-  loadNationalities(): void {
-    this.nationalityService.getNationalities().subscribe(
-      (response: any[]) => {
-        this.nacionalidades = response
-          .map(country => country.name.common === 'Brazil' ? 'Brasil' : country.name.common)
-          .sort();
-      },
-      (error) => {
-        console.error("Erro ao carregar nacionalidades:", error);
-        // Adiciona um fallback caso a API falhe
-        this.nacionalidades = ['Brasil', 'Argentina', 'Chile', 'Uruguai', 'Paraguai'];
-      }
-    );
-  }
-  
-  loadAppointment(id: number): void {
-    this.isLoading = true;
-    const token = localStorage.getItem('authToken');
-  
-    if (!token) {
-      this.errorMessage = 'Autenticação necessária. Faça login novamente.';
-      this.router.navigate(['/login']);
-      return;
-    }
-  
-    this.http.get<Appointment>(`http://127.0.0.1:8000/api/appointments/${id}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    }).subscribe(
-      (response: Appointment | null) => {
-        if (!response) {
-          console.error("Resposta da API veio nula.");
-          this.errorMessage = "Erro ao carregar os dados do agendamento.";
-          return;
-        }
-  
-        this.appointment = response;
-        this.appointment.additionalInfo = response.additionalInfo ?? this.initializeAdditionalInfo();
-      },
-      (error: any) => {
-        console.error("Erro ao carregar o agendamento", error);
-      }
-    ).add(() => this.isLoading = false);
-  }
-  
-
+  // Métodos de inicialização
   private initializeNewAppointment(): Appointment {
     return {
       id: 0,
@@ -228,82 +133,30 @@ export class EditListComponent implements OnInit {
       has_chronic_disease: false,
       chronic_disease: '',
       education_level: '',
-      nationality: 'Brasileiro',
+      nationality: 'Brasil',
       room_id: null,
       bed_id: null,
       stay_duration: 0,
       exit_date: ''
-      
     };
   }
 
-  loadEstados(): void {
-    if (!this.ibgeService || !this.ibgeService.getEstados) {
-      console.error("IbgeService não foi injetado corretamente.");
-      return;
+  // Métodos de navegação entre steps
+  goToStep(step: number): void {
+    if (step >= 1 && step <= 3) {
+      this.currentStep = step;
     }
-  
-    this.ibgeService.getEstados().subscribe(
-      (data: any[]) => {
-        this.estados = data;
-      },
-      (error: HttpErrorResponse) => {
-        console.error("Erro ao carregar estados:", error.message);
-      }
-    );
-  }
-
-  onEstadoChange(nomeEstado: string): void {
-    const estadoSelecionado = this.estados.find(estado => estado.nome === nomeEstado);
-    if (estadoSelecionado) {
-      this.appointment.state = estadoSelecionado.id; // 🔥 Agora armazena o ID em vez do nome
-      this.loadCidades(estadoSelecionado.id);
-    } else {
-      this.appointment.state = ''; // 🔥 Reseta se não for válido
-      this.cidades = [];
-    }
-  }
-  
-
-  loadCidades(estadoId: number): void {
-    this.ibgeService.getCidadesPorEstado(estadoId).subscribe(
-      (data: any[]) => {
-        this.cidades = data;
-      },
-      (error: HttpErrorResponse) => {
-        console.error("Erro ao carregar cidades:", error.message);
-      }
-    );
-  }
-
-  loadRooms(): void {
-    this.roomService.getRooms().subscribe(
-      (data: any[]) => {
-        this.rooms = data;
-      },
-      (error: HttpErrorResponse) => {
-        console.error('Erro ao carregar quartos:', error.message);
-      }
-    );
-  }
-
-  onRoomChange(event: Event): void {
-    const roomId = Number((event.target as HTMLSelectElement).value);
-    if (!roomId || isNaN(roomId)) {
-      console.error('ID do quarto é inválido ou não foi selecionado.');
-      return;
-    }
-    this.appointment.additionalInfo.room_id = roomId;
-    this.loadBeds(roomId);
   }
 
   nextStep(): void {
     if (!this.validateFields()) {
-      console.error("Por favor, preencha todos os campos obrigatórios.");
+      this.errorMessage = "Por favor, preencha todos os campos obrigatórios.";
+      this.notificationService.showError(this.errorMessage);
       return;
     }
     if (this.currentStep < 3) {
       this.currentStep++;
+      this.errorMessage = '';
     }
   }
 
@@ -313,64 +166,306 @@ export class EditListComponent implements OnInit {
     }
   }
 
-  goToStep(step: number): void {
-    this.currentStep = step;
-  }
-
-  validateFields(): boolean {
+  private validateFields(): boolean {
     if (this.appointmentForm) {
       Object.values(this.appointmentForm.controls).forEach(control => {
         control.markAsTouched();
       });
     }
-    return this.appointmentForm.valid ?? false;
+    return this.appointmentForm?.valid ?? false;
   }
 
+  // Métodos de manipulação de eventos
+  onEstadoChange(nomeEstado: string): void {
+    const estadoSelecionado = this.estados.find(estado => estado.nome === nomeEstado);
+    if (estadoSelecionado) {
+      this.appointment.state = estadoSelecionado.id.toString();
+      this.loadCidades(estadoSelecionado.id);
+    } else {
+      this.appointment.state = '';
+      this.cidades = [];
+    }
+  }
 
-  onSubmit(): void {
-    if (!this.appointment || !this.appointment.id) {
-      console.error("Erro: ID do agendamento indefinido.");
-      this.modalMessage = "Erro interno: ID do agendamento não encontrado.";
-      this.showModal = true;
+  onRoomChange(event: Event): void {
+    const roomId = Number((event.target as HTMLSelectElement).value);
+    if (!roomId || isNaN(roomId)) {
+      console.error('ID do quarto é inválido');
       return;
     }
-  
-    this.isSaving = true;
-    this.showModal = false;
-    this.modalMessage = '';
-  
-    console.log("Enviando atualização para o agendamento:", this.appointment);
-  
-    const combinedData: Appointment = {
-      ...this.appointment,
-      isHidden: false,
-      additionalInfo: {
-        ...this.appointment.additionalInfo,
-        exit_date: this.appointment.additionalInfo.exit_date
-      }
-    };
-  
-    this.appointmentService.updateAppointment(this.appointment.id, combinedData)
-      .pipe(finalize(() => this.isSaving = false))
-      .subscribe(
-        (updatedAppointment: Appointment) => {
-          this.showModal = true;
-          this.modalMessage = 'Agendamento atualizado com sucesso!';
-  
-          this.router.navigate(['/appointments-list']).then(() => {
-            console.log("Navegação concluída.");
-          });
-        },
-        (error: HttpErrorResponse) => {
-          this.modalMessage = error.status === 422 && error.error && error.error.message
-            ? error.error.message
-            : 'Erro ao atualizar o agendamento. Tente novamente mais tarde.';
-          this.showModal = true;
-          console.error("Erro ao atualizar o agendamento:", error);
-        }
-      );
+    this.appointment.additionalInfo.room_id = roomId;
+    this.loadBeds(roomId);
   }
-  
+
+  // Métodos de carregamento de dados
+  private checkAuthentication(): void {
+    if (!this.authService.isLoggedIn()) {
+      this.notificationService.showError('Sessão expirada. Por favor, faça login novamente.');
+      this.router.navigate(['/login']);
+    }
+  }
+
+  private loadAppointmentData(): void {
+    const appointmentId = Number(this.route.snapshot.paramMap.get('id'));
+    
+    if (appointmentId) {
+      this.fetchAppointment(appointmentId);
+    } else {
+      this.handleMissingAppointmentId();
+    }
+  }
+
+  private fetchAppointment(id: number): void {
+    this.isLoading = true;
+    
+    this.appointmentService.getAppointment(id)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => this.isLoading = false)
+      )
+      .subscribe({
+        next: (response) => this.handleAppointmentResponse(response),
+        error: (error) => this.handleAppointmentError(error)
+      });
+  }
+
+  private handleAppointmentResponse(response: Appointment): void {
+    if (!response) {
+      throw new Error('Resposta vazia da API');
+    }
+    
+    this.appointment = response;
+    this.appointment.additionalInfo = response.additionalInfo ?? this.initializeAdditionalInfo();
+    
+    if (this.appointment.state) {
+      this.loadCidades(Number(this.appointment.state));
+    }
+  }
+
+  private handleAppointmentError(error: any): void {
+    console.error('Erro ao carregar agendamento:', error);
+    this.handleError(error);
+  }
+
+  private handleMissingAppointmentId(): void {
+    console.error('ID do agendamento não fornecido na rota');
+    this.notificationService.showError('ID do agendamento não encontrado');
+    this.router.navigate(['/appointments-list']);
+  }
+
+  private loadInitialData(): void {
+    this.loadEstados();
+    this.loadRooms();
+    this.loadNationalities();
+    this.loadOccupiedBeds();
+  }
+
+  private loadOccupiedBeds(): void {
+    this.appointmentService.getAppointments()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (appointments) => this.processOccupiedBeds(appointments),
+        error: (error) => this.handleOccupiedBedsError(error)
+      });
+  }
+
+  private processOccupiedBeds(appointments: Appointment[]): void {
+    this.occupiedBeds = appointments
+      .filter(app => app.additionalInfo?.bed_id != null)
+      .map(app => ({
+        bedId: app.additionalInfo!.bed_id as number,
+        occupantName: `${app.name} ${app.last_name}`
+      }));
+
+    if (this.appointment.additionalInfo?.room_id) {
+      this.loadBeds(this.appointment.additionalInfo.room_id);
+    }
+  }
+
+  private handleOccupiedBedsError(error: HttpErrorResponse): void {
+    console.error('Erro ao carregar agendamentos:', error);
+    this.notificationService.showError('Erro ao carregar dados das camas ocupadas');
+  }
+
+  private loadBeds(roomId: number): void {
+    this.bedService.getBedsByRoomId(roomId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (data) => this.processBedsData(data),
+        error: (error) => this.handleBedsError(error)
+      });
+  }
+
+  private processBedsData(data: any[]): void {
+    this.filteredBeds = data.map(bed => {
+      const occupiedBed = this.occupiedBeds.find(occupied => occupied.bedId === bed.id);
+      return {
+        ...bed,
+        is_available: !occupiedBed,
+        occupantName: occupiedBed ? occupiedBed.occupantName : ''
+      };
+    });
+  }
+
+  private handleBedsError(error: HttpErrorResponse): void {
+    console.error("Erro ao carregar camas:", error.message);
+    this.notificationService.showError('Erro ao carregar dados das camas');
+  }
+
+  private loadNationalities(): void {
+    this.nationalityService.getNationalities()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => this.processNationalities(response),
+        error: (error) => this.handleNationalitiesError(error)
+      });
+  }
+
+  private processNationalities(response: any[]): void {
+    this.nacionalidades = response
+      .map(country => country.name.common === 'Brazil' ? 'Brasil' : country.name.common)
+      .sort();
+  }
+
+  private handleNationalitiesError(error: any): void {
+    this.nacionalidades = ['Brasil', 'Argentina', 'Chile', 'Uruguai', 'Paraguai'];
+  }
+
+  private loadEstados(): void {
+    this.ibgeService.getEstados()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (data) => this.estados = data,
+        error: (error) => this.handleEstadosError(error)
+      });
+  }
+
+  private handleEstadosError(error: HttpErrorResponse): void {
+    console.error("Erro ao carregar estados:", error.message);
+    this.notificationService.showError('Erro ao carregar lista de estados');
+  }
+
+  private loadCidades(estadoId: number): void {
+    this.ibgeService.getCidadesPorEstado(estadoId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (data) => this.cidades = data,
+        error: (error) => this.handleCidadesError(error)
+      });
+  }
+
+  private handleCidadesError(error: HttpErrorResponse): void {
+    console.error("Erro ao carregar cidades:", error.message);
+    this.notificationService.showError('Erro ao carregar lista de cidades');
+  }
+
+  private loadRooms(): void {
+    this.roomService.getRooms()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (data) => this.rooms = data,
+        error: (error) => this.handleRoomsError(error)
+      });
+  }
+
+  private handleRoomsError(error: HttpErrorResponse): void {
+    console.error('Erro ao carregar quartos:', error.message);
+    this.notificationService.showError('Erro ao carregar lista de quartos');
+  }
+
+  // Métodos de manipulação de formulário
+  async onSubmit(): Promise<void> {
+    if (!this.validateForm()) return;
+
+    this.isSaving = true;
+    
+    try {
+      await this.saveAppointment();
+      
+      // Exibir o modal de sucesso
+      this.showSuccessModal = true;
+      
+      // Esconder o modal após 3 segundos e redirecionar
+      setTimeout(() => {
+        this.showSuccessModal = false;
+        this.router.navigate(['/appointments-list']);
+      }, 3000); // 3000 milissegundos = 3 segundos
+
+    } catch (error) {
+      this.handleSaveError(error);
+    } finally {
+      this.isSaving = false;
+    }
+  }
+
+  private validateForm(): boolean {
+    if (!this.appointment?.id) {
+      this.notificationService.showError('ID do agendamento não encontrado');
+      return false;
+    }
+    
+    if (this.appointmentForm && !this.appointmentForm.valid) {
+      this.errorMessage = "Por favor, preencha todos os campos obrigatórios.";
+      this.notificationService.showError(this.errorMessage);
+      return false;
+    }
+    
+    return true;
+  }
+
+  private async saveAppointment(): Promise<void> {
+    try {
+      await this.authService.ensureCsrfToken();
+      
+      // Se está sendo colocado em uma cama/quarto, marcar como não oculto
+      if (this.appointment.additionalInfo?.bed_id && this.appointment.additionalInfo?.room_id) {
+        this.appointment.isHidden = false;
+      }
+      
+      const response = await this.appointmentService.updateAppointment(
+        this.appointment.id, 
+        this.appointment
+      ).pipe(takeUntil(this.destroy$)).toPromise();
+      
+      return response;
+    } catch (error) {
+      console.error('Erro ao salvar agendamento:', error);
+      throw error;
+    }
+  }
+
+  private handleSaveError(error: any): void {
+    console.error('Erro ao atualizar:', error);
+    
+    if (error.status === 419) {
+      this.notificationService.showError('Sessão expirada. Tentando novamente...');
+      // Tentar renovar o token CSRF e tentar novamente
+      setTimeout(async () => {
+        try {
+          await this.authService.ensureCsrfToken();
+          await this.onSubmit();
+        } catch (err) {
+          this.notificationService.showError('Erro persistente. Por favor, faça login novamente.');
+          this.authService.logout();
+          this.router.navigate(['/login']);
+        }
+      }, 1000);
+    } else {
+      this.handleError(error);
+    }
+  }
+
+  private handleError(error: any): void {
+    if (error.status === 401) {
+      this.notificationService.showError('Sessão expirada. Por favor, faça login novamente.');
+      this.authService.logout();
+      this.router.navigate(['/login']);
+    } else {
+      const message = error.message || 'Erro ao processar a solicitação. Tente novamente.';
+      this.notificationService.showError(message);
+    }
+  }
+
   onFileChange(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
@@ -390,39 +485,58 @@ export class EditListComponent implements OnInit {
   updateAppointment(): void {
     if (!this.appointment.id) {
       console.error('Erro: ID do agendamento indefinido.');
+      this.notificationService.showError('ID do agendamento não encontrado');
       return;
     }
   
-    this.appointmentService.updateAppointment(this.appointment.id, this.appointment).subscribe(
-      () => {
-        this.router.navigate(['/appointments-list']);
-      },
-      (error) => {
-        console.error('Erro ao atualizar o agendamento:', error);
-      }
-    );
+    this.appointmentService.updateAppointment(this.appointment.id, this.appointment)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          // Exibir o modal de sucesso
+          this.showSuccessModal = true;
+          setTimeout(() => {
+            this.showSuccessModal = false;
+            this.router.navigate(['/appointments-list']);
+          }, 3000); 
+        },
+        error: (error) => {
+          console.error('Erro ao atualizar o agendamento:', error);
+          this.handleError(error);
+        }
+      });
   }
 
   hideAppointment(id: number): void {
-    this.appointmentService.hideAppointment(id).subscribe(
-      () => {
-        console.log(`Agendamento ${id} ocultado com sucesso.`);
-      },
-      (error) => {
-        console.error('Erro ao ocultar agendamento:', error);
-      }
-    );
+    this.appointmentService.hideAppointment(id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.notificationService.showSuccess(`Agendamento ${id} ocultado com sucesso.`);
+        },
+        error: (error) => {
+          console.error('Erro ao ocultar agendamento:', error);
+          this.notificationService.showError('Erro ao ocultar agendamento');
+        }
+      });
   }
   
   updateVisibility(id: number, isHidden: boolean): void {
-    this.appointmentService.updateVisibility(id, isHidden).subscribe(
-      () => {
-        console.log(`Visibilidade do agendamento ${id} atualizada.`);
-      },
-      (error) => {
-        console.error('Erro ao atualizar visibilidade:', error);
-      }
-    );
+    this.appointmentService.updateVisibility(id, isHidden)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.notificationService.showSuccess(`Visibilidade do agendamento ${id} atualizada.`);
+        },
+        error: (error) => {
+          console.error('Erro ao atualizar visibilidade:', error);
+          this.notificationService.showError('Erro ao atualizar visibilidade');
+        }
+      });
   }
-  
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
 }

@@ -1,52 +1,102 @@
-.agora {
-  text-decoration: none;
-}
+/* form.component.css (VERSÃO CORRIGIDA E SIMPLIFICADA) */
 
-.tooltip {
-  position: absolute;
-  background-color: #333;
-  color: #fff;
-  padding: 8px;
-  border-radius: 4px;
-  margin-top: 5px;
-  z-index: 1000;
-  white-space: nowrap;
-}
+/*
+  1. Estilo do Componente (:host)
+  - Aplica a imagem de fundo em tela cheia.
+  - Adiciona espaçamento no topo para não ficar atrás do menu.
+*/
+:host {
+  display: block;
+  width: 100%;
+  min-height: 100vh;
+  padding-top: 100px;
+  padding-bottom: 50px;
+  box-sizing: border-box;
 
-.form-check-input {
-  margin-right: 15px;
-}
-
-.form-group.row {
-  display: flex;
-  align-items: center;
-}
-
-.mover {
-  padding-left: 19px;
+  background-image: url('../../../assets/img/mao4.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
 }
 
 
+/*
+  2. Container do Formulário (.form-container)
+  - 'margin: auto' centraliza o formulário de forma estável.
+  - 'max-width' controla a largura máxima em telas grandes.
+*/
+.form-container {
+  max-width: 850px;
+  margin: auto;
+  background-color: rgba(255, 255, 255, 0.9);
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+
+/*
+  3. Estilos Gerais do Formulário (títulos, inputs, etc.)
+*/
+h2 {
+  text-align: center;
+  color: #333;
+  font-weight: bold;
+  margin-bottom: 25px;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+label {
+  font-weight: bold;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.btn-custom {
+  background-color: #007bff;
+  color: white;
+  width: 100%;
+  padding: 12px;
+  font-size: 1.1rem;
+  border: none;
+}
+
+.btn-custom:hover, .btn-custom:focus {
+  background-color: #0056b3 !important;
+}
+
+/* Borda vermelha para campos inválidos e tocados */
+.ng-invalid.ng-touched:not(form) {
+  border: 1px solid #dc3545;
+}
+
+
+/*
+  4. Ícones de Informação e Tooltips
+*/
 .info-icon {
-  position: relative;
   cursor: pointer;
   margin-left: 5px;
-  color: #000000;
+  color: #007bff;
 }
 
 .tooltip-text {
   visibility: hidden;
   width: 250px;
-  background-color: rgba(51, 51, 51, 0.8);
+  background-color: rgba(51, 51, 51, 0.9);
   color: #fff;
   text-align: center;
   border-radius: 5px;
-  padding: 5px;
+  padding: 8px;
   position: absolute;
-  z-index: 1;
+  z-index: 1000;
   bottom: 125%;
   left: 50%;
-  margin-left: -125px;
+  transform: translateX(-50%);
   opacity: 0;
   transition: opacity 0.3s;
 }
@@ -56,99 +106,21 @@
   opacity: 1;
 }
 
-.form-container {
-  background-color: rgba(255, 255, 255, 0.8);
-  padding: 30px;
-  border-radius: 10px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-  margin: 50px auto;
-  max-width: 800px;
+
+/*
+  5. Checkboxes Personalizados
+*/
+.custom-checkbox {
+  margin-top: 10px;
 }
 
-h2 {
-  text-align: center;
-  color: #333;
-  font-weight: bold;
-  margin-bottom: 20px;
+.custom-label {
+  margin-left: 10px;
 }
 
-.form-group {
-  margin-bottom: 15px;
-  padding-top: 5px;
-}
-
-label {
-  font-weight: bold;
-}
-
-.btn-custom {
-  background-color: #007bff;
-  color: white;
-  width: 100%;
-}
-
-.info-icon {
-  margin-left: 5px;
-  cursor: help;
-  padding-top: 5px;
-}
-
-.form-container {
-  margin-bottom: 50px;
-}
-
-.move-checkbox {
-  margin-left: 20px;
-}
-
-.form-background {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: #1077d1 !important; 
-  z-index: -1;
-}
-
-:host {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  width: 100vw;
-  background-image: url('../../../assets/img/mao4.jpg'); 
-  background-size: cover;
-  background-position: center; 
-  background-repeat: no-repeat; 
-  background-attachment: fixed; 
-}
-
-
-.container-fluid {
-  flex-grow: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.form-container {
-  background-color: rgba(255, 255, 255, 0.8);
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.btn-custom {
-  background-color: #007bff;
-  color: #fff;
-  border: none;
-}
-
-.btn-custom:hover {
-  background-color: #0056b3;
-  background-image: url('../../../assets/img/mao3.jpg');
-}
-
+/*
+  6. Estilos para Modais (opcional, se você os utiliza neste componente)
+*/
 .modal-content-success {
   background-color: #d4edda;
   border-color: #c3e6cb;
@@ -158,7 +130,6 @@ label {
   background-color: #f8d7da;
   border-color: #f5c6cb;
 }
-
 .success-icon {
   color: #28a745;
   font-size: 48px;
@@ -269,4 +240,21 @@ label {
   margin-left: 28px;  
   margin-top: 25px;  
 
+}
+
+.custom-label {
+  margin-left: 28px;  
+  margin-top: 25px;  
+
+}
+
+#fullCapacityModal {
+  display: flex !important;
+  justify-content: center;
+  align-items: center;
+  padding: 0 !important;
+}
+
+#fullCapacityModal .modal-dialog {
+  margin: auto;
 }

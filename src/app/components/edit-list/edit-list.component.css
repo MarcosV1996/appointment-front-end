@@ -122,7 +122,6 @@ button[type="submit"]:hover {
   text-align: center;
 }
 
-/* CSS para personalizar o select e adicionar o ícone */
 .select-wrapper {
   position: relative;
 }
@@ -157,7 +156,6 @@ button[type="submit"]:hover {
   color: red;
 }
 
-/* Estilo responsivo para colunas */
 @media (max-width: 768px) {
   .col-md-4, .col-sm-6 {
     margin-bottom: 15px; 
@@ -170,7 +168,6 @@ button[type="submit"]:hover {
   height: 48px; 
 }
 
-/* Ajustes para inputs e selects em Step 2 */
 .form-control-lg {
   padding: 14px; 
   font-size: 1rem;
@@ -185,7 +182,6 @@ textarea.form-control-lg {
   font-weight: bold;
 }
 
-/* Espaçamento adicional entre colunas */
 .row.mb-4 {
   margin-bottom: 20px;
 }
@@ -193,7 +189,6 @@ textarea.form-control-lg {
 .col-lg-3, .col-md-4, .col-sm-6 {
   margin-bottom: 15px; 
 }
-/* Container centralizado com largura máxima */
 .container-fluid {
   max-width: 1200px; 
   margin: 0 auto; 
@@ -204,7 +199,6 @@ textarea.form-control-lg {
   max-width: 350px; 
 }
 
-/* Ajuste adicional para centralização dos campos */
 .row {
   justify-content: space-between; 
 }
@@ -221,3 +215,74 @@ textarea.form-control-lg {
   text-decoration: none !important;
 }
 
+.success-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6); 
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+.success-modal-content {
+  background-color: white;
+  padding: 30px 40px;
+  border-radius: 10px;
+  text-align: center;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  width: 350px; 
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.success-message {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #28a745; 
+  margin-top: 20px;
+}
+
+.check-mark-container {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-color: #28a745;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden; 
+}
+
+.check-mark {
+  width: 40px;
+  height: 20px;
+  border-bottom: 5px solid white;
+  border-left: 5px solid white;
+  transform: rotate(-45deg);
+  opacity: 0; 
+  animation: drawCheckmark 0.8s ease-out forwards; 
+  animation-delay: 0.2s; 
+}
+
+@keyframes drawCheckmark {
+  0% {
+    width: 0;
+    height: 0;
+    opacity: 0;
+  }
+  50% {
+    width: 40px;
+    height: 0;
+    opacity: 1;
+  }
+  100% {
+    width: 40px;
+    height: 20px;
+    opacity: 1;
+  }
+}

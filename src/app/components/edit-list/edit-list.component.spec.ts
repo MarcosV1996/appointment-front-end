@@ -85,7 +85,7 @@ describe('EditListComponent', () => {
           religion: 'Católico',
           has_chronic_disease: false,
           chronic_disease: '',
-          education_level: 'Ensino médio completo',
+          education_level: 'Ensino Superior completo',
           nationality: 'Brasileiro',
           room_id: 2,
           bed_id: 101,

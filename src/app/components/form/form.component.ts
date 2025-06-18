@@ -1,14 +1,12 @@
-import { Component, OnInit, TemplateRef } from '@angular/core';
+import { Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { IbgeService } from '../ibge.service';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { NgxMaskDirective, NgxMaskPipe, provideNgxMask } from 'ngx-mask';
-import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule } from '@angular/forms';
-import { DatePipe } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { CommonModule, DatePipe } from '@angular/common';
+import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { AppointmentService } from '../services/services2/appointments.service';
 
 interface Estado {
@@ -19,7 +17,7 @@ interface Estado {
 
 interface Cidade {
   id: number;
-  nome: string;
+  nome: string; 
 }
 
 @Component({
@@ -31,21 +29,25 @@ interface Cidade {
   styleUrls: ['./form.component.css']
 })
 export class FormComponent implements OnInit {
+  @ViewChild('duplicateCpfModal') private duplicateCpfModal!: TemplateRef<any>;
+
   registerForm!: FormGroup;
   selectedFile: File | null = null;
   invalidFile: boolean = false;
   successMessage: string = '';
   errorMessage: string = '';
   states: Estado[] = [];
-  cidades: any[] = [];
+  cidades: Cidade[] = [];
   availableBeds: number = 0;
   minArrivalDate: string = '';
   maxArrivalDate: string = '';
+  maxBirthDate: string = '';
   selectedArrivalDate: Date | null = null;
   isFullCapacityModalOpen: boolean = false;
   isForeign: boolean = false;
   rulesContent: TemplateRef<any> | null = null;
   isLoadingBeds: boolean = true;
+  isLoading: boolean = false;
 
   private readonly ERROR_MESSAGES = {
     invalidFile: 'Arquivo inválido. Apenas arquivos .jpg, .jpeg e .png são aceitos.',
@@ -68,22 +70,52 @@ export class FormComponent implements OnInit {
 
   ngOnInit(): void {
     this.setDateConstraints();
+    const today = new Date();
+    const maxBirthDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+    this.maxBirthDate = maxBirthDate.toISOString().split('T')[0];
+    
     this.initializeForm();
     this.loadStates();
-    this.loadAvailableBeds();
-    this.setupFormListeners();
-    this.getAvailableBeds();
-    this.checkAvailableBeds();
-  
-    this.registerForm.get('foreignCountry')?.valueChanges.subscribe((isForeign) => {
-      this.handleForeignStatus(isForeign);
+    
+    this.loadAvailableBeds().then(() => {
+      this.setupFormListeners();
+      this.registerForm.get('foreignCountry')?.valueChanges.subscribe((isForeign) => {
+        this.toggleLocationFields(isForeign);
+      });
     });
+
+    this.getCsrfToken();
+  }
+
+  private async getCsrfToken(): Promise<boolean> {
+    try {
+      document.cookie = 'XSRF-TOKEN=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+      
+      await this.http.get('http://localhost:8000/sanctum/csrf-cookie', {
+        withCredentials: true,
+        headers: new HttpHeaders({
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        })
+      }).toPromise();
+  
+      const csrfToken = this.getCookie('XSRF-TOKEN');
+      if (!csrfToken) {
+        console.error('CSRF Token não encontrado após a requisição');
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Erro ao obter CSRF token:', error);
+      return false;
+    }
   }
 
   private setDateConstraints(): void {
     const today = new Date();
     this.minArrivalDate = this.formatDate(today);
-    this.maxArrivalDate = this.formatDate(this.addDays(today, 14)); // 15 dias incluindo hoje
+    this.maxArrivalDate = this.formatDate(this.addDays(today, 14));
   }
 
   updateDateRange(): void {
@@ -93,7 +125,7 @@ export class FormComponent implements OnInit {
       this.minArrivalDate = this.formatDate(this.selectedArrivalDate);
       this.maxArrivalDate = this.formatDate(this.addDays(this.selectedArrivalDate, 14));
     } else {
-      this.setDateConstraints(); // Volta ao padrão se a data for limpa
+      this.setDateConstraints();
     }
   }
 
@@ -107,11 +139,51 @@ export class FormComponent implements OnInit {
     return result;
   }
 
-  get isNearDateLimit(): boolean {
-    if (!this.selectedArrivalDate) return false;
-    const limitDate = this.addDays(this.selectedArrivalDate, 14);
-    const today = new Date();
-    return limitDate.getTime() - today.getTime() < 3 * 24 * 60 * 60 * 1000; // 3 dias
+  loadAvailableBeds(): Promise<void> {
+    return new Promise((resolve) => {
+      this.isLoadingBeds = true;
+      
+      this.http.get<{ availableBeds: number }>('http://localhost:8000/api/available-beds', {
+        withCredentials: true
+      }).subscribe({
+        next: (response: { availableBeds: number }) => {
+          this.availableBeds = response.availableBeds;
+          this.isLoadingBeds = false;
+          this.checkAvailableBeds();
+          resolve();
+        },
+        error: (error) => {
+          console.error('Erro ao buscar vagas disponíveis:', error);
+          this.availableBeds = 0;
+          this.isLoadingBeds = false;
+          this.checkAvailableBeds();
+          resolve();
+        }
+      });
+    });
+  }
+
+  checkAvailableBeds(): void {
+    if (this.availableBeds <= 0) {
+      this.isFullCapacityModalOpen = true;
+      this.registerForm.disable();
+    } else {
+      this.isFullCapacityModalOpen = false;
+      this.registerForm.enable();
+      
+      if (this.registerForm.get('foreignCountry')?.value) {
+        this.registerForm.get('state')?.disable();
+        this.registerForm.get('city')?.disable();
+      }
+      
+      if (this.registerForm.get('noPhone')?.value) {
+        this.registerForm.get('phone')?.disable();
+      }
+    }
+  }
+
+  closeFullCapacityModal(): void {
+    this.isFullCapacityModalOpen = false;
   }
 
   handleForeignStatus(isForeign: boolean): void {
@@ -141,7 +213,7 @@ export class FormComponent implements OnInit {
     this.registerForm = this.fb.group({
       name: ['', Validators.required],
       last_name: ['', Validators.required],
-      cpf: ['', [Validators.required, FormComponent.validarCPF]],
+      cpf: ['', [Validators.required, this.validateCpf]],
       birth_date: ['', [Validators.required, this.validateAge]],
       mother_name: ['', Validators.required],
       gender: ['', Validators.required],
@@ -149,40 +221,17 @@ export class FormComponent implements OnInit {
       time: ['', Validators.required],
       state: ['', Validators.required], 
       city: ['', Validators.required],  
-      accommodation_mode: ['', Validators.required],
-      phone: ['', [
-        Validators.pattern(/^\(\d{2}\)\s?9\d{4}-\d{4}$/)
-      ]],  
+      accommodation_mode: ['24_horas', Validators.required],
+      phone: ['', [this.validatePhoneFormat]], 
       observation: [''],
-      foreignCountry: [{ value: '', disabled: false }],
+      foreignCountry: [false],
       noPhone: [false]
     });
-  }
 
-  loadAvailableBeds(): void {
-    this.isLoadingBeds = true; 
-  
-    const headers: any = {};
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    }
-  
-    this.http.get<{ availableBeds: number }>('http://127.0.0.1:8000/api/available-beds', { headers })
-      .subscribe({
-        next: (response) => {
-          console.log('Resposta da API:', response.availableBeds);
-          this.availableBeds = response.availableBeds;
-          this.isLoadingBeds = false; 
-  
-          setTimeout(() => this.checkAvailableBeds(), 100);
-        },
-        error: (error) => {
-          console.error('Erro ao buscar vagas disponíveis:', error);
-          this.availableBeds = 0;
-          this.isLoadingBeds = false; 
-        },
-      });
+    Object.keys(this.registerForm.controls).forEach(key => {
+      this.registerForm.get(key)?.markAsUntouched();
+      this.registerForm.get(key)?.markAsPristine();
+    });
   }
 
   private setupFormListeners(): void {
@@ -191,70 +240,62 @@ export class FormComponent implements OnInit {
     });
 
     this.registerForm.get('noPhone')?.valueChanges.subscribe(checked => {
+      const phoneControl = this.registerForm.get('phone');
       if (checked) {
-        this.registerForm.get('phone')?.setValidators([]);
-        this.registerForm.get('phone')?.updateValueAndValidity();
+        phoneControl?.clearValidators();
+        phoneControl?.disable();
+        phoneControl?.setValue('');
       } else {
-        this.registerForm.get('phone')?.setValidators([Validators.pattern(/^\(\d{2}\) 9\d{4}-\d{4}$/)]);
-        this.registerForm.get('phone')?.updateValueAndValidity();
+        phoneControl?.setValidators([this.validatePhoneFormat]); 
+        phoneControl?.enable();
       }
+      phoneControl?.updateValueAndValidity();
     });
   }
 
-  public toggleLocationFields(event: Event): void {
-    const isForeign = (event.target as HTMLInputElement).checked;
-    this.registerForm.get('foreignCountry')?.setValue(isForeign);
-  
-    if (isForeign) {
-      this.registerForm.patchValue({
-        state: 'Estrangeiro',
-        city: null
-      });
-      this.registerForm.get('state')?.disable();
-      this.registerForm.get('city')?.disable();
-    } else {
-      this.registerForm.get('state')?.enable();
-      this.registerForm.get('city')?.enable();
-      this.registerForm.patchValue({ state: '', city: '' });
+  validatePhoneFormat = (control: AbstractControl): ValidationErrors | null => {
+    const value = control.value;
+    if (this.registerForm && this.registerForm.get('noPhone')?.value) {
+      return null;
     }
-  
-    this.registerForm.get('state')?.updateValueAndValidity();
-    this.registerForm.get('city')?.updateValueAndValidity();
-  }
 
-  private togglePhoneField(noPhone: boolean): void {
+    if (!value) {
+      return { required: true }; 
+    }
+
+    const cleanedValue = String(value).replace(/\D/g, ''); 
+
+    if (cleanedValue.length < 10 || cleanedValue.length > 11) {
+      return { invalidPhoneFormat: true };
+    }
+
+    return null;
+  };
+
+
+  formatPhoneNumber(): void {
     const phoneControl = this.registerForm.get('phone');
-    if (noPhone) {
-      phoneControl?.clearValidators();
-      phoneControl?.disable();
-    } else {
-      phoneControl?.setValidators([
-        Validators.required,
-        Validators.pattern(/\(\d{2}\) \d{5}-\d{4}/),
-      ]);
-      phoneControl?.enable();
-    }
-    phoneControl?.updateValueAndValidity();
-  }
+    if (phoneControl && phoneControl.value !== null) { 
+        let value = String(phoneControl.value).replace(/\D/g, ''); 
 
-  openRulesModal(content: TemplateRef<any>): void {
-    if (content) {
-      this.modalService.open(content, { centered: true });
-    }
-  }
-
-  formatName(field: 'name' | 'last_name'): void {
-    const control = this.registerForm.get(field);
-    if (control && control.value) {
-      const formattedValue = control.value
-        .split(' ')
-        .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-        .join(' ');
-      control.setValue(formattedValue);
+        if (value.length > 0) {
+            value = value.replace(/^(\d{2})(\d)/g, '($1) $2'); 
+            if (value.length > 9) { 
+                value = value.replace(/(\d{5})(\d)/, '$1-$2'); 
+            } else if (value.length > 8) { 
+                value = value.replace(/(\d{4})(\d)/, '$1-$2'); 
+            }
+        }
+        
+        if (phoneControl.value !== value) {
+            phoneControl.setValue(value, { emitEvent: false });
+            phoneControl.updateValueAndValidity(); 
+        }
     }
   }
 
-  static validarCPF(control: AbstractControl): ValidationErrors | null {
+
+  validateCpf(control: AbstractControl): ValidationErrors | null {
     const cpf = control.value;
     if (!cpf) return null;
 
@@ -291,9 +332,31 @@ export class FormComponent implements OnInit {
   
     return isUnderage ? { underage: true } : null;
   }
-  
+
+  public toggleLocationFields(event: Event | boolean): void {
+    const isForeign = typeof event === 'boolean' ? event : (event.target as HTMLInputElement).checked;
+    this.isForeign = isForeign;
+    this.handleForeignStatus(isForeign);
+  }
+
+  openRulesModal(content: TemplateRef<any>): void {
+    if (content) {
+      this.modalService.open(content, { centered: true });
+    }
+  }
+
+  formatName(field: 'name' | 'last_name'): void {
+    const control = this.registerForm.get(field);
+    if (control && control.value) {
+      const formattedValue = control.value
+        .split(' ')
+        .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ');
+      control.setValue(formattedValue);
+    }
+  }
+
   loadStates(): void {
-    console.log('🔵 Chamando API de estados...');
     this.locale.getEstados().subscribe({
       next: (states: Estado[]) => {
         this.states = states;
@@ -311,27 +374,25 @@ export class FormComponent implements OnInit {
     }
   
     this.registerForm.get('city')?.enable();
-    console.log(`🔵 Chamando API para carregar cidades do estado: ${stateId}`);
     this.loadCities(stateId);
   }
   
   loadCities(stateId: string): void {
     if (!stateId) {
       this.cidades = [];
-      console.warn('🟠 Nenhum estado selecionado.');
       return;
     }
   
     this.locale.getCidadesPorEstado(+stateId).subscribe({
-      next: (cidades: any[]) => {
+      next: (cidades: Cidade[]) => {
         this.cidades = cidades;
       },
       error: (error: any) => {
-        this.cidades = [{ id: -1, nome: 'Erro ao carregar cidades' }];
+        this.cidades = [];
+        console.error('Erro ao carregar cidades:', error);
       },
     });
   }
-  
 
   onFileChange(event: Event): void {
     const input = event.target as HTMLInputElement;
@@ -341,221 +402,224 @@ export class FormComponent implements OnInit {
     }
   }
 
-  getAvailableBeds() {
-    this.appointmentsService.getAvailableBeds().subscribe((data) => {
-      this.availableBeds = data.availableBeds;
-    });
-  }  
-
-  checkAvailableBeds() {
-    if (this.isLoadingBeds) {
+  private getCookie(name: string): string | null {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) {
+      const cookieValue = parts.pop()?.split(';').shift();
+      return cookieValue ? decodeURIComponent(cookieValue) : null;
+    }
+    return null;
+  }
+  
+  async onSubmit(content: TemplateRef<any>): Promise<void> {
+    this.isLoading = true;
+    this.errorMessage = '';
+  
+    const csrfSuccess = await this.getCsrfToken();
+    if (!csrfSuccess) {
+      this.errorMessage = 'Erro de segurança. Por favor, recarregue a página.';
+      this.isLoading = false;
       return;
     }
-
-    if (this.availableBeds === 0) {
-      this.isFullCapacityModalOpen = true;
-      this.registerForm.disable();
-      this.registerForm.controls['state'].disable();
-      this.registerForm.controls['city'].disable();
-      this.registerForm.controls['phone'].disable();
-
-    } else {
-      this.isFullCapacityModalOpen = false;
-      this.registerForm.enable();
-      this.registerForm.controls['state'].enable();
-      this.registerForm.controls['city'].enable();
-      this.registerForm.controls['phone'].enable();
-      this.registerForm.controls['foreignCountryCheck']?.enable();
+  
+    this.markAllAsTouched();
+    if (!this.registerForm.valid) {
+      this.errorMessage = this.ERROR_MESSAGES.requiredFields;
+      this.isLoading = false;
+      return;
     }
-  }
-
-  closeFullCapacityModal() {
-    this.isFullCapacityModalOpen = false;
-  }
-
-  onSubmit(content: TemplateRef<any>): void {
-    if (this.registerForm.valid) {
-      this.loadAvailableBeds();
-
-      if (this.invalidFile) {
-        this.errorMessage = this.ERROR_MESSAGES.invalidFile;
-        return;
-      }
-
-      if (this.registerForm.get('foreignCountry')?.value) {
-        this.registerForm.get('state')?.setValue('Estrangeiro');
-        this.registerForm.get('city')?.setValue('Não se aplica');
-      } else if (!this.registerForm.get('state')?.value) {
-        this.errorMessage = 'O campo estado é obrigatório.';
-        return;
-      }
-
-      const cpfValue = this.registerForm.get('cpf')?.value.replace(/\D/g, '');
-      this.registerForm.patchValue({ cpf: cpfValue });
-
-      if (this.registerForm.get('noPhone')?.value) {
-        this.registerForm.patchValue({ phone: null });
-      }
-
-      const formattedBirthDate = new Date(this.registerForm.get('birth_date')?.value).toISOString().split('T')[0];
-      const formattedArrivalDate = new Date(this.registerForm.get('arrival_date')?.value).toISOString().split('T')[0];
-      this.registerForm.patchValue({
-        birth_date: formattedBirthDate,
-        arrival_date: formattedArrivalDate,
-      });
-
-      const formData = new FormData();
-      formData.append('name', this.registerForm.get('name')?.value);
-      formData.append('last_name', this.registerForm.get('last_name')?.value);
-      formData.append('cpf', this.registerForm.get('cpf')?.value);
-      formData.append('mother_name', this.registerForm.get('mother_name')?.value);
-      formData.append('gender', this.registerForm.get('gender')?.value);
-      formData.append('birth_date', this.registerForm.get('birth_date')?.value);
-      formData.append('arrival_date', this.registerForm.get('arrival_date')?.value);
-      formData.append('time', this.registerForm.get('time')?.value);
-      formData.append('state', this.registerForm.get('state')?.value);
-      formData.append('city', this.registerForm.get('city')?.value);
-      formData.append('phone', this.registerForm.get('phone')?.value || '');
-      formData.append('observation', this.registerForm.get('observation')?.value || '');
-
-      const accommodationMap: { [key: string]: string } = {
-        'Acolhimento 24 horas': '24_horas',
-        'Pernoite': 'pernoite',
-      };
-
-      const selectedAccommodation = this.registerForm.get('accommodation_mode')?.value;
-      const mappedAccommodation = accommodationMap[selectedAccommodation] || selectedAccommodation || 'pernoite';
-
-      formData.append('accommodation_mode', mappedAccommodation);
-
-      if (this.selectedFile) {
-        const fileType = this.selectedFile.type;
-        if (fileType === 'image/jpeg' || fileType === 'image/png' || fileType === 'image/jpg') {
-          formData.append('photo', this.selectedFile, this.selectedFile.name);
-        } else {
-          this.errorMessage = 'O arquivo selecionado deve ser uma imagem (JPEG, PNG).';
-          return;
-        }
-      } else {
-        const existingPhoto = this.registerForm.get('photo')?.value;
-        if (existingPhoto) {
-          formData.append('photo', existingPhoto);
-        }
-      }
-
-      const token = localStorage.getItem('authToken');
-      if (token) {
-        this.http.post('http://127.0.0.1:8000/api/appointments', formData, {
-          headers: { Authorization: `Bearer ${token}` },
-        }).subscribe({
-          next: () => {
-            this.successMessage = 'Agendamento realizado com sucesso!';
-            this.registerForm.reset();
-            this.loadAvailableBeds();
-            this.openSuccessModal(content);
-          },
-          error: (error) => {
-            if (error.status === 409) {
-              if (confirm('Já existe um agendamento com este CPF. Deseja substituir?')) {
-                formData.append('replace', 'true');
-                this.http.post('http://127.0.0.1:8000/api/appointments', formData, {
-                  headers: { Authorization: `Bearer ${token}` },
-                }).subscribe({
-                  next: () => {
-                    this.successMessage = 'Agendamento atualizado com sucesso!';
-                    this.registerForm.reset();
-                    this.loadAvailableBeds();
-                    this.openSuccessModal(content);
-                  },
-                  error: () => {
-                    this.errorMessage = 'Erro ao substituir o agendamento.';
-                  },
-                });
+  
+    const formData = this.prepareFormData();
+    if (!formData) {
+      this.isLoading = false;
+      return;
+    }
+  
+    const csrfToken = this.getCookie('XSRF-TOKEN');
+    if (!csrfToken) {
+      this.errorMessage = 'Erro de segurança. Recarregue a página.';
+      this.isLoading = false;
+      return;
+    }
+  
+    try {
+      await this.sendAppointmentRequest(formData, csrfToken, content);
+    } catch (error: any) {
+      if (error.status === 409) {
+        this.modalService.open(this.duplicateCpfModal, { centered: true }).result.then(
+          async (result) => {
+            if (result === 'confirm') {
+              this.isLoading = true;
+              formData.set('replace', 'true');
+              try {
+                await this.sendAppointmentRequest(formData, csrfToken, content);
+                this.successMessage = 'Agendamento atualizado com sucesso!';
+              } catch (e) {
+                this.handleApiError(e);
+              } finally {
+                this.isLoading = false;
               }
             } else {
-              this.errorMessage = 'Erro ao processar o agendamento.';
+              this.isLoading = false;
             }
           },
-        });
+          (reason) => {
+            this.isLoading = false;
+          }
+        );
+      } else if (error.status === 422) {
+        this.handleValidationErrors(error);
+        this.isLoading = false;
+      } else {
+        this.handleApiError(error);
+        this.isLoading = false;
+      }
+    }
+  }
+
+  private prepareFormData(): FormData | null {
+    try {
+      const isForeign = this.registerForm.get('foreignCountry')?.value === true;
+      if (isForeign) {
+        this.registerForm.get('state')?.setValue('Estrangeiro');
+        this.registerForm.get('city')?.setValue('Não se aplica');
+      }
+  
+      const cpfValue = this.registerForm.get('cpf')?.value.replace(/\D/g, '');
+      const noPhoneChecked = this.registerForm.get('noPhone')?.value === true;
+      let phoneToSend = '';
+      if (!noPhoneChecked) {
+        const phoneValue = this.registerForm.get('phone')?.value;
+        if (phoneValue) {
+          phoneToSend = String(phoneValue).replace(/\D/g, '');
+        }
+      }
+  
+      const formattedBirthDate = new Date(this.registerForm.get('birth_date')?.value).toISOString().split('T')[0];
+      const formattedArrivalDate = new Date(this.registerForm.get('arrival_date')?.value).toISOString().split('T')[0];
+  
+      const formData = new FormData();
+      const formValues = {
+        name: this.registerForm.get('name')?.value,
+        last_name: this.registerForm.get('last_name')?.value,
+        cpf: cpfValue,
+        mother_name: this.registerForm.get('mother_name')?.value,
+        gender: this.registerForm.get('gender')?.value,
+        birth_date: formattedBirthDate,
+        arrival_date: formattedArrivalDate,
+        time: this.registerForm.get('time')?.value,
+        state: this.registerForm.get('state')?.value,
+        city: this.registerForm.get('city')?.value,
+        phone: phoneToSend,
+        observation: this.registerForm.get('observation')?.value || '',
+        accommodation_mode: this.registerForm.get('accommodation_mode')?.value,
+        foreign_country: isForeign ? 1 : 0,
+        noPhone: noPhoneChecked ? 1 : 0,
+        replace: 'false'
+      };
+  
+      Object.entries(formValues).forEach(([key, value]) => {
+        if (value !== null && value !== undefined) {
+          formData.append(key, value.toString());
+        }
+      });
+  
+      if (this.selectedFile) {
+        const fileType = this.selectedFile.type;
+        if (['image/jpeg', 'image/png', 'image/jpg'].includes(fileType)) {
+          formData.append('photo', this.selectedFile, this.selectedFile.name);
+        } else {
+          this.errorMessage = this.ERROR_MESSAGES.invalidFile;
+          throw new Error(this.ERROR_MESSAGES.invalidFile);
+        }
+      }
+      return formData;
+    } catch (error) {
+      console.error("Erro ao preparar dados do formulário:", error);
+      return null;
+    }
+  }
+
+  private async sendAppointmentRequest(formData: FormData, csrfToken: string, successModalContent: TemplateRef<any>): Promise<any> {
+    const response = await this.http.post(
+      'http://localhost:8000/api/appointments',
+      formData,
+      {
+        headers: new HttpHeaders({
+          'X-XSRF-TOKEN': csrfToken,
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        }),
+        withCredentials: true
+      }
+    ).toPromise();
+
+    this.handleSuccess(successModalContent);
+    return response;
+  }
+  
+  private handleValidationErrors(error: any): void {
+    if (error.error?.errors) {
+      const errors = error.error.errors;
+      
+      if (errors.phone) {
+          this.errorMessage = "Número de telefone inválido. Por favor, insira um número com 10 ou 11 dígitos (incluindo o DDD).";
+      } else if (errors.foreign_country) {
+        this.errorMessage = 'Por favor, marque corretamente a opção "País estrangeiro".';
+      } else {
+        const firstErrorKey = Object.keys(errors)[0];
+        this.errorMessage = errors[firstErrorKey][0];
       }
     } else {
-      this.markInvalidFields();
-      this.errorMessage = this.ERROR_MESSAGES.requiredFields;
+      this.errorMessage = 'Dados inválidos. Verifique os campos do formulário.';
+    }
+  }
+  
+  private handleSuccess(content: TemplateRef<any>): void {
+    this.successMessage = 'Agendamento realizado com sucesso!';
+    this.registerForm.reset();
+    this.loadAvailableBeds();
+    this.openSuccessModal(content);
+  }
+  
+  private handleApiError(error: any): void {
+    console.error('Erro na API:', error);
+    
+    if (error.status === 419) {
+      this.errorMessage = 'Sessão expirada. Recarregue a página.';
+    } else if (error.error?.message) {
+      this.errorMessage = error.error.message;
+    } else {
+      this.errorMessage = 'Erro ao processar o agendamento. Tente novamente.';
     }
   }
 
-  private formatDates(): void {
-    const formattedBirthDate = new Date(this.registerForm.get('birth_date')?.value).toISOString().split('T')[0];
-    this.registerForm.patchValue({ birth_date: formattedBirthDate });
-
-    const formattedArrivalDate = new Date(this.registerForm.get('arrival_date')?.value).toISOString().split('T')[0];
-    this.registerForm.patchValue({ arrival_date: formattedArrivalDate });
-  }
-
-  private prepareFormData(): FormData {
-    const formData = new FormData();
-
-    formData.append('name', this.registerForm.get('name')?.value);
-    formData.append('last_name', this.registerForm.get('last_name')?.value);
-    formData.append('cpf', this.registerForm.get('cpf')?.value);
-    formData.append('mother_name', this.registerForm.get('mother_name')?.value || '');
-    formData.append('gender', this.registerForm.get('gender')?.value);
-    formData.append('birth_date', this.registerForm.get('birth_date')?.value);
-    formData.append('arrival_date', this.registerForm.get('arrival_date')?.value);
-    formData.append('time', this.registerForm.get('time')?.value);
-    formData.append('state', this.getStateName(this.registerForm.get('state')?.value));
-    formData.append('city', this.getCityName(this.registerForm.get('city')?.value));
-    formData.append('phone', this.registerForm.get('phone')?.value || '');
-    formData.append('observation', this.registerForm.get('observation')?.value || '');
-    formData.append('accommodation_mode', this.registerForm.get('accommodation_mode')?.value || '');
-
-    console.log('Modalidade de Acolhimento:', this.registerForm.get('accommodation_mode')?.value);
-
-    if (this.selectedFile) {
-      formData.append('photo', this.selectedFile, this.selectedFile.name);
+  checkAge(): void {
+    const birthDateControl = this.registerForm.get('birth_date');
+    if (birthDateControl) {
+      const birthDate = new Date(birthDateControl.value);
+      const today = new Date();
+      const age = today.getFullYear() - birthDate.getFullYear();
+      
+      const isUnderage = age < 18 || 
+                        (age === 18 && today < new Date(birthDate.setFullYear(today.getFullYear())));
+      
+      if (isUnderage) {
+        birthDateControl.setErrors({ underage: true });
+      } else {
+        if (birthDateControl.hasError('underage')) {
+          birthDateControl.setErrors(null);
+          birthDateControl.updateValueAndValidity();
+        }
+      }
     }
-
-    return formData;
   }
 
-  private submitToApi(formData: FormData, content: TemplateRef<any>, token: string): void {
-    this.http.post('http://127.0.0.1:8000/api/appointments', formData, {
-      headers: { Authorization: `Bearer ${token}` },
-    }).subscribe({
-      next: () => {
-        this.successMessage = this.ERROR_MESSAGES.registrationSuccess;
-        this.loadAvailableBeds(); 
-        this.openSuccessModal(content); 
-      },
-      error: (error) => {
-        console.error('Erro ao enviar dados:', error);
-        this.errorMessage = this.ERROR_MESSAGES.registrationError;
-      }
+  private markAllAsTouched(): void {
+    Object.values(this.registerForm.controls).forEach(control => {
+      control.markAsTouched();
     });
-  }
-
-  private handleInvalidForm(): void {
-    this.markInvalidFields();
-    this.errorMessage = this.ERROR_MESSAGES.requiredFields;
-  }
-
-  private markInvalidFields(): void {
-    Object.keys(this.registerForm.controls).forEach((field) => {
-      const control = this.registerForm.get(field);
-      if (control && control.invalid) {
-        control.markAsTouched({ onlySelf: true });
-      }
-    });
-  }
-
-  private getStateName(stateId: string): string {
-    const state = this.states.find(s => s.id.toString() === stateId);
-    return state ? state.nome : '';
-  }
-
-  private getCityName(cityId: string): string {
-    const city = this.cidades.find(c => c.id.toString() === cityId);
-    return city ? city.nome : '';
   }
 
   private openSuccessModal(content: TemplateRef<any>): void {

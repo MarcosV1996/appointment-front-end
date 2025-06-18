@@ -1,113 +1,117 @@
 <body>
-<nav class="navbar navbar-expand-lg navbar-light bg-black fixed-top">
-  <div class="container">
-    <h1 class="navbar-brand" style="color: white;">
-      <a routerLink="/home" style="text-decoration: none; color: white;">
-        <img
-          src="../../../assets/img/logo.png"
-          alt="Logo do Albergue Noturno"
-          height="30"
-          class="align-top"
-        />
-        Albergue Noturno
-      </a>
-    </h1>
-    <button
-      class="navbar-toggler"
-      type="button"
-      data-bs-toggle="collapse"
-      data-bs-target="#navbarSupportedContent"
-      aria-controls="navbarSupportedContent"
-      aria-expanded="false"
-      aria-label="Toggle navigation"
-    >
-      <span class="navbar-toggler-icon"></span>
-    </button>
-
-    <div class="collapse navbar-collapse" id="navbarSupportedContent">
-      <ul class="navbar-nav ms-auto">
-        <li class="nav-item">
-          <a class="nav-link" routerLink="/home" routerLinkActive="active" ariaCurrentWhenActive="page">Página inicial</a>
-        </li>
-
-        <li class="nav-item" *ngIf="isLoggedIn()">
-          <a class="nav-link" routerLink="/appointments" routerLinkActive="active" ariaCurrentWhenActive="page">Agendamentos</a>
-        </li>
-
-        <li class="nav-item" *ngIf="!isLoggedIn()">
-          <a class="nav-link" routerLink="/appointments" routerLinkActive="active" ariaCurrentWhenActive="page">Agendamentos</a>
-        </li>
-
-        <li class="nav-item" *ngIf="!isLoggedIn()">
-          <a class="nav-link" routerLink="/contacts" routerLinkActive="active" ariaCurrentWhenActive="page">Contatos</a>
-        </li>
-
-        <li class="nav-item" *ngIf="!isLoggedIn()">
-          <a class="nav-link" routerLink="/jobs" routerLinkActive="active" ariaCurrentWhenActive="page">Trabalhe conosco</a>
-        </li>
-
-        <li class="nav-item" *ngIf="!isLoggedIn()">
-          <a class="nav-link" routerLink="/about" routerLinkActive="active" ariaCurrentWhenActive="page">Sobre</a>
-        </li>
-
-        <!-- Admin & Employee Menu -->
-        <li class="nav-item" *ngIf="isAdmin() || isEmployee()">
-          <a class="nav-link" routerLink="/appointments-list" routerLinkActive="active" ariaCurrentWhenActive="page">Lista de Agendamentos</a>
-        </li>
-
-        <li class="nav-item" *ngIf="isAdmin()">
-          <a class="nav-link" routerLink="/reports" routerLinkActive="active" ariaCurrentWhenActive="page">Relatórios</a>
-        </li>
-
-        <!-- Dropdown de Gerenciamento para Admin -->
-        <li class="nav-item dropdown" *ngIf="isAdmin()">
-          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-            Gerenciamento
-          </a>
-          <ul class="dropdown-menu dropdown-menu-dark">
-            <li>
-              <a class="dropdown-item" routerLink="/user-registration">
-                <i class="fas fa-user-plus"></i> Cadastrar novos usuários
-              </a>
+  <nav class="navbar navbar-expand-lg navbar-light bg-black fixed-top">
+    <div class="container">
+      <h1 class="navbar-brand" style="color: white;">
+        <a routerLink="/home" style="text-decoration: none; color: white;">
+          <img
+            src="assets/img/logo.png"
+            alt="Logo do Albergue Noturno"
+            height="30"
+            class="align-top"
+          />
+          Albergue Noturno
+        </a>
+      </h1>
+      <button
+        class="navbar-toggler"
+        type="button"
+        (click)="toggleMenu()"
+        aria-expanded="false"
+        aria-label="Toggle navigation"
+      >
+        <span class="navbar-toggler-icon"></span>
+      </button>
+  
+      <div class="collapse navbar-collapse" [class.show]="!isMenuCollapsed" id="navbarSupportedContent">
+        <ul class="navbar-nav">
+          <li class="nav-item">
+            <a class="nav-link" routerLink="/home" routerLinkActive="active" (click)="closeMenu()">Página inicial</a>
+          </li>
+  
+          <li class="nav-item">
+            <a class="nav-link" routerLink="/appointments" routerLinkActive="active" (click)="closeMenu()">Agendamentos</a>
+          </li>
+  
+          <ng-container *ngIf="!isLoggedIn">
+            <li class="nav-item">
+              <a class="nav-link" routerLink="/contacts" routerLinkActive="active" (click)="closeMenu()">Contatos</a>
             </li>
-            <li>
-              <a class="dropdown-item" routerLink="/manage-users">
-                <i class="fas fa-list"></i> Lista de usuários
-              </a>
+  
+            <li class="nav-item">
+              <a class="nav-link" routerLink="/jobs" routerLinkActive="active" (click)="closeMenu()">Trabalhe conosco</a>
             </li>
-          </ul>
-        </li>
-
-        <!-- Dropdown de usuário se estiver logado -->
-        <li class="nav-item dropdown" *ngIf="isLoggedIn()">
-          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-            <img [src]="userPhotoUrl || 'assets/img/default-user.png'" alt="Foto do usuário" class="user-photo rounded-circle">
-            <span>{{ userName }}</span>
-          </a>
-          <ul class="dropdown-menu dropdown-menu-dark">
-            <li>
-              <button class="dropdown-item" type="button" (click)="openPhotoUploadModal()">
-                <i class="fas fa-camera"></i> Trocar Foto
-              </button>
+  
+            <li class="nav-item">
+              <a class="nav-link" routerLink="/about" routerLinkActive="active" (click)="closeMenu()">Sobre</a>
             </li>
-            <li>
-              <button class="dropdown-item" type="button" (click)="logout()">
-                <i class="fas fa-sign-out-alt"></i> Sair
-              </button>
-            </li>
-          </ul>
-        </li>
-
-        <!-- Botão de Login se o usuário não estiver logado -->
-        <li class="nav-item" *ngIf="!isLoggedIn()">
-          <button class="login-button" type="button" (click)="navigateToLogin()">
-            <i class="fas fa-user"></i> Entrar
+          </ng-container>
+  
+          <li class="nav-item" *ngIf="isAdmin() || isEmployee()">
+            <a class="nav-link" routerLink="/appointments-list" routerLinkActive="active" (click)="closeMenu()">
+              Lista de Agendamentos
+            </a>
+          </li>
+                <li class="nav-item" *ngIf="isAdmin() || isEmployee()">
+                  <a class="nav-link" routerLink="/edit-list" routerLinkActive="active" (click)="closeMenu()">
+                   
+                  </a>
+                </li>
+  
+          <li class="nav-item" *ngIf="isAdmin()">
+            <a class="nav-link" routerLink="/reports" routerLinkActive="active" (click)="closeMenu()">Relatórios</a>
+          </li>
+  
+          <li class="nav-item dropdown" *ngIf="isAdmin()">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" (click)="closeMenu()">
+              Gerenciamento
+            </a>
+            <ul class="dropdown-menu dropdown-menu-dark">
+              <li>
+                <a class="dropdown-item" routerLink="/user-registration" (click)="closeMenu()">
+                  <i class="fas fa-user-plus me-2"></i>Cadastrar usuários
+                </a>
+              </li>
+              <li>
+                <a class="dropdown-item" routerLink="/manage-users" (click)="closeMenu()">
+                  <i class="fas fa-list me-2"></i>Gerenciar usuários
+                </a>
+              </li>
+            </ul>
+          </li>
+  
+          <li class="nav-item dropdown" *ngIf="isLoggedIn">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+              <img [src]="userPhotoUrl" 
+              alt="User photo" 
+              class="user-photo rounded-circle me-2"
+              width="30"
+              height="30"
+              (error)="handleImageError()">
+              <span>{{ userName || 'Usuário' }}</span>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-dark">
+              <li>
+                <button class="dropdown-item" type="button" (click)="openPhotoUploadModal(); closeMenu()">
+                  <i class="fas fa-camera me-2"></i>Alterar foto
+                </button>
+                <input type="file" id="photoUploadInput" style="display: none;" (change)="uploadPhoto($event)" accept="image/*">              </li>
+              <li>
+                <button class="dropdown-item" type="button" (click)="logout(); closeMenu()">
+                  <i class="fas fa-sign-out-alt me-2"></i>Sair
+                </button>
+              </li>
+            </ul>
+          </li>
+  
+       <li class="nav-item" *ngIf="!isLoggedIn">
+         <button class="login-button" type="button" 
+                (click)="router.navigate(['/login']); closeMenu()">
+            <i class="fas fa-arrow-right-to-bracket"></i>
+            <span>Entrar</span>
           </button>
-        </li>
-
-      </ul>
-    </div> 
-  </div>
-
-</nav>
+      </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
 </body>

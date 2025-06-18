@@ -8,7 +8,6 @@ import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import autoTable from 'jspdf-autotable';
 
-// Definição da interface para os dados de faixa etária
 interface AgeCount {
   group: string;
   count: number;
@@ -53,24 +52,27 @@ export class ReportsComponent {
 
   viewAllReports() {
     console.log('Exibindo todos os relatórios.');
-
+  
     this.activeFilter = 'all';
     this.isFilterApplied = true;
     this.isLoading = true;
-
-    this.http.get<any>('http://127.0.0.1:8000/api/reports').subscribe({
+  
+    const headers = {
+      'Authorization': 'Bearer ' + this.authService.getToken()
+    };
+  
+    this.http.get<any>('http://localhost:8000/api/reports', { headers }).subscribe({
       next: (response) => {
         console.log('Resposta do servidor:', response);
-
+  
         // Carrega todos os dados gerais
         this.bedCounts = response.bed_counts || { A: 0, B: 0, C: 0 };
         this.aggregatedData.gender_counts = response.gender_counts || [];
         this.aggregatedData.age_counts = response.age_counts || [];
         this.turnoCounts = this.processTurnoCounts(response.time_data || []);
-
+  
         this.isLoading = false;
-
-        // Renderiza gráficos, se necessário
+  
         if (this.showCharts) {
           this.renderCharts();
         }
@@ -111,7 +113,6 @@ export class ReportsComponent {
   }
 
   saveReport(reportType: string) {
-    // Usar isLoggedIn() em vez de isAuthenticated()
     if (!this.authService.isLoggedIn()) {
         alert('Você precisa estar logado para salvar relatórios!');
         return;
@@ -164,48 +165,52 @@ export class ReportsComponent {
     });
 }
 
-  applyFilters() {
-    console.log('Filtros enviados:', this.filters);
+applyFilters() {
+  console.log('Filtros enviados:', this.filters);
 
-    this.isLoading = true;
+  this.isLoading = true;
 
-    this.http
-      .get<any>('http://127.0.0.1:8000/api/reports', {
-        params: {
-          room: this.filters.room,
-          gender: this.filters.gender,
-          ageGroup: this.filters.ageGroup,
-          startDate: this.filters.startDate,
-          endDate: this.filters.endDate,
-          turn: this.filters.turn,
-        },
-      })
-      .subscribe({
-        next: (response) => {
-          console.log('Resposta da API ao aplicar filtros:', response);
+  const headers = {
+    'Authorization': 'Bearer ' + this.authService.getToken()
+  };
 
-          // Atualiza os dados filtrados
-          this.bedCounts = response.bed_counts || { A: 0, B: 0, C: 0 };
-          this.aggregatedData.gender_counts = response.gender_counts || [];
-          this.aggregatedData.age_counts = response.age_counts.filter(
-            (item: AgeCount) =>
-              item.group === this.getAgeGroupLabel(this.filters.ageGroup)
-          );
-          this.turnoCounts = this.processTurnoCounts(response.time_data || []);
+  this.http
+    .get<any>('http://localhost:8000/api/reports', {
+      headers,
+      params: {
+        room: this.filters.room,
+        gender: this.filters.gender,
+        ageGroup: this.filters.ageGroup,
+        startDate: this.filters.startDate,
+        endDate: this.filters.endDate,
+        turn: this.filters.turn,
+      },
+    })
+    .subscribe({
+      next: (response) => {
+        console.log('Resposta da API ao aplicar filtros:', response);
 
-          // Renderiza os gráficos novamente com os dados filtrados
-          this.renderCharts();
+        // Atualiza os dados filtrados
+        this.bedCounts = response.bed_counts || { A: 0, B: 0, C: 0 };
+        this.aggregatedData.gender_counts = response.gender_counts || [];
+        this.aggregatedData.age_counts = response.age_counts.filter(
+          (item: AgeCount) =>
+            item.group === this.getAgeGroupLabel(this.filters.ageGroup)
+        );
+        this.turnoCounts = this.processTurnoCounts(response.time_data || []);
 
-          this.isLoading = false;
-          console.log('ageCounts atualizados:', this.aggregatedData.age_counts);
-          console.log('turnoCounts atualizados:', this.turnoCounts);
-        },
-        error: (err) => {
-          console.error('Erro ao carregar relatórios com filtros:', err);
-          this.isLoading = false;
-        },
-      });
-  }
+        this.renderCharts();
+
+        this.isLoading = false;
+        console.log('ageCounts atualizados:', this.aggregatedData.age_counts);
+        console.log('turnoCounts atualizados:', this.turnoCounts);
+      },
+      error: (err) => {
+        console.error('Erro ao carregar relatórios com filtros:', err);
+        this.isLoading = false;
+      },
+    });
+}
 
   getAgeGroupLabel(ageGroup: string): string {
     const labels: { [key: string]: string } = {
@@ -231,7 +236,6 @@ export class ReportsComponent {
       }
     });
 
-    // Filtra os turnos com base no filtro aplicado (se houver)
     const selectedTurn = this.filters.turn;
     if (selectedTurn) {
       return Object.keys(turnoData)
@@ -512,17 +516,10 @@ export class ReportsComponent {
       doc.setFont('helvetica', 'bold');
       doc.text('RELATÓRIO DE ACOLHIMENTOS', 105, 20, { align: 'center' });
       
-      // Sub-título
       doc.setFontSize(12);
       doc.setFont('helvetica', 'normal');
       doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, 105, 28, { align: 'center' });
   
-      // Adiciona logo (opcional)
-      // const logo = new Image();
-      // logo.src = 'assets/logo.png';
-      // doc.addImage(logo, 'PNG', 14, 10, 30, 10);
-  
-      // Variável para controlar a posição Y
       let startY = 40;
   
       // 1. Dados dos quartos
@@ -553,7 +550,6 @@ export class ReportsComponent {
         }
       });
   
-      // Atualiza a posição Y para a próxima tabela
       startY = (doc as any).lastAutoTable.finalY + 15;
   
       // 2. Dados por gênero
@@ -582,7 +578,6 @@ export class ReportsComponent {
         }
       });
   
-      // Atualiza a posição Y para a próxima tabela
       startY = (doc as any).lastAutoTable.finalY + 15;
   
       // 3. Dados por faixa etária
@@ -611,7 +606,6 @@ export class ReportsComponent {
         }
       });
   
-      // Atualiza a posição Y para a próxima tabela
       startY = (doc as any).lastAutoTable.finalY + 15;
   
       // 4. Dados por turno

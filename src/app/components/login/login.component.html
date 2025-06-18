@@ -1,32 +1,42 @@
+<!-- login.component.html -->
 <body>
   <div class="login-container">
     <h2>Login</h2>
     <form [formGroup]="loginForm" (ngSubmit)="onLogin()">
       <div class="form-group">
         <i class="fas fa-user icon"></i>
-        <input type="text" id="username" formControlName="username" placeholder="Username" required>
+        <input type="text" 
+               id="username" 
+               formControlName="username" 
+               placeholder="Username"
+               [class.invalid]="loginForm.controls['username'].invalid && loginForm.controls['username'].touched">
         <div *ngIf="loginForm.controls['username'].invalid && loginForm.controls['username'].touched" class="error-message">
-          Username é obrigatório.
+          {{ loginForm.controls['username'].hasError('required') ? 'Username é obrigatório' : 
+             loginForm.controls['username'].hasError('minlength') ? 'Mínimo 3 caracteres' : '' }}
         </div>
       </div>
 
       <div class="form-group">
         <i class="fas fa-lock icon"></i>
-        <input [type]="passwordVisible ? 'text' : 'password'" id="password" formControlName="password" placeholder="Password" required>
+        <input [type]="passwordVisible ? 'text' : 'password'" 
+               id="password" 
+               formControlName="password" 
+               placeholder="Password"
+               [class.invalid]="loginForm.controls['password'].invalid && loginForm.controls['password'].touched">
         <i class="fas fa-eye eye-icon" (click)="togglePasswordVisibility()"></i>
         <div *ngIf="loginForm.controls['password'].invalid && loginForm.controls['password'].touched" class="error-message">
-          Senha é obrigatória.
+          {{ loginForm.controls['password'].hasError('required') ? 'Senha é obrigatória' : 
+             loginForm.controls['password'].hasError('minlength') ? 'Mínimo 6 caracteres' : '' }}
         </div>
       </div>
   
       <button type="submit" [disabled]="loginForm.invalid || loading">
         <span *ngIf="loading" class="spinner"><i class="fas fa-spinner fa-spin"></i></span>
-        Login
+        <span *ngIf="!loading">Login</span>
       </button>
   
       <p *ngIf="loginError" class="error-message">{{ loginError }}</p>
       <a (click)="goToForgotPassword()" style="cursor: pointer;" class="back-link">Esqueci a senha</a>
-
     </form>
   </div>
 

@@ -1,34 +1,77 @@
-<div class="container mt-4">
-    <h2 class="text-center mb-4">Gerenciamento de Usuários</h2>
+<div class="container-fluid mt-5 pt-5">
+  <h2 class="text-center mb-5">Gerenciamento de Usuários</h2>
+</div>
+
+<div class="container">
+
+  <div class="content-wrapper">
+
+    <div class="loader-container" [class.visible]="isLoading">
+      <div class="custom-spinner"></div>
+      <p class="loader-text">Carregando usuários...</p>
+    </div>
+
+    <div class="table-container" [class.visible]="!isLoading && !errorMessage">
+      <div class="table-responsive">
+        <table class="table table-striped table-hover">
+          <thead class="table-dark">
+            <tr>
+              <th>ID</th>
+              <th>Nome Completo</th>
+              <th>Nome de Usuário</th>
+              <th>Email</th>
+              <th>Permissão</th>
+              <th class="text-center">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let user of users; trackBy: trackByUserId">
+              <td>{{ user.id }}</td>
+              <td>{{ user.name || 'Sem nome' }}</td>
+              <td>{{ user.username }}</td>
+              <td>{{ user.email || 'Sem email' }}</td>
+              <td>{{ user.role }}</td>
+              <td class="actions">
+                <button class="btn btn-warning btn-sm" (click)="editUser(user)">
+                  <i class="fas fa-pencil-alt"></i> Editar
+                </button>
+                <button class="btn btn-danger btn-sm ms-2" (click)="openDeleteConfirmation(user)">
+                  <i class="fas fa-trash-alt"></i> Excluir
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div> 
   
-    <table class="table">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Nome Completo</th>
-          <th>Nome de Usuário</th>
-          <th>Email</th>
-          <th>Permissão</th>
-          <th>Ações</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let user of users">
-          <td>{{ user.id }}</td>
-          <td>{{ user.name || 'Sem nome' }}</td> 
-          <td>{{ user.username }}</td>
-          <td>{{ user.email || 'Sem email' }}</td>
-          <td>{{ user.role }}</td>
-          <td>
-            <button class="btn btn-warning btn-sm" (click)="editUser(user)">
-              Editar
-            </button>
-            <button class="btn btn-danger btn-sm ms-2" (click)="deleteUser(user.id)">
-              Excluir
-            </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+  <div *ngIf="errorMessage && !isLoading" class="alert alert-danger mt-3">
+    <i class="fas fa-exclamation-triangle me-2"></i>
+    {{ errorMessage }}
   </div>
-  
+
+</div>
+
+<div *ngIf="isDeleteModalVisible" class="modal-overlay">
+  <div class="modal-content card shadow-lg">
+    <div class="modal-header">
+      <h5 class="modal-title text-danger"><i class="fas fa-exclamation-triangle me-2"></i>Confirmar Exclusão</h5>
+      <button type="button" class="btn-close" aria-label="Close" (click)="cancelDelete()"></button>
+    </div>
+    <div class="modal-body text-center p-4">
+      <p>Você tem certeza que deseja excluir o usuário?</p>
+      <p class="fw-bold">{{ userToDelete?.name }} ({{ userToDelete?.email }})</p>
+      <p class="text-muted small">Esta ação não poderá ser desfeita.</p>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" (click)="cancelDelete()">
+        <i class="fas fa-times me-1"></i> Não, cancelar
+      </button>
+      <button type="button" class="btn btn-danger" (click)="confirmDelete()">
+        <i class="fas fa-check me-1"></i> Sim, excluir
+      </button>
+    </div>
+  </div>
+</div>

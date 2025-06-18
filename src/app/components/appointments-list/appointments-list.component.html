@@ -22,12 +22,14 @@
     </div>
   </div>
 
-  <div class="section">
-    <div class="vagas-disponiveis-container">
+  <div class="vagas-disponiveis-wrapper"> <div class="vagas-disponiveis-container">
       <p class="vagas-disponiveis-message">
-        Vagas Disponíveis: <span>{{ availableBeds }}</span>
+        Vagas Disponíveis: 
+        <strong>{{ availableBeds }} </strong>
       </p>
     </div>
+  </div>
+  
 
     <div *ngIf="filteredAppointments && filteredAppointments.length > 0; else noData" class="card-container">
       <div *ngFor="let appointment of filteredAppointments" class="card">
@@ -83,7 +85,6 @@
           </div>
 
           <div *ngIf="appointment.showMore" class="additional-info">
-            <!-- Informações adicionais -->
             <div class="info-row">
               <i class="fa-solid fa-clock"></i>
               <strong> Horário de Chegada:</strong> {{ appointment.time }}
@@ -212,9 +213,7 @@
       <p class="no-data-message">Nenhum agendamento encontrado.</p>
     </ng-template>
   </div>
-</div>
 
-<!-- Modal de Confirmação de Ocultação -->
 <div class="modal fade show d-block" id="confirmHideModal" tabindex="-1" role="dialog" *ngIf="isHideModalOpen">
   <div class="modal-dialog" role="document">
     <div class="modal-content">

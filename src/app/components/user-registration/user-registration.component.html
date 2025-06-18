@@ -1,108 +1,142 @@
-<body>
+<div class="registration-container">
+  <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="registration-form">
+    <h3 class="form-title">
+      <i class="fas fa-user-plus"></i> Cadastrar Usuário
+    </h3>
 
-  <div class="container-registration">
-    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="form-registration">
-      <h3 class="mb-4 text-center text-primary">Cadastrar Usuário</h3>
-  
-      <div class="mb-3">
-        <label for="name" class="form-label">Nome Completo</label>
-        <input id="name" type="text" class="form-control" formControlName="name" placeholder="Digite o nome completo" required>
+    <div class="form-group">
+      <label for="name" class="form-label">Nome Completo</label>
+      <input id="name" type="text" class="form-control" 
+             formControlName="name" 
+             placeholder="Digite o nome completo"
+             [class.invalid]="registerForm.get('name')?.invalid && registerForm.get('name')?.touched">
+      <div *ngIf="registerForm.get('name')?.invalid && registerForm.get('name')?.touched" class="error-message">
+        Nome completo é obrigatório
       </div>
-  
-      <div class="mb-3">
-        <label for="username" class="form-label">Nome de Usuário</label>
-        <input id="username" type="text" class="form-control" formControlName="username" placeholder="Digite o nome de usuário" required>
+    </div>
+
+    <div class="form-group">
+      <label for="username" class="form-label">Nome de Usuário</label>
+      <input id="username" type="text" class="form-control" 
+             formControlName="username" 
+             placeholder="Digite o nome de usuário"
+             [class.invalid]="registerForm.get('username')?.invalid && registerForm.get('username')?.touched">
+      <div *ngIf="registerForm.get('username')?.errors?.['required'] && registerForm.get('username')?.touched" class="error-message">
+        Nome de usuário é obrigatório
       </div>
-  
-      <div class="mb-3">
-        <label for="email" class="form-label">E-mail</label>
-        <input id="email" type="email" class="form-control" formControlName="email" placeholder="Digite o e-mail" required>
-        <div *ngIf="registerForm.controls['email'].invalid && registerForm.controls['email'].touched" class="text-danger">
-          Informe um e-mail válido.
-        </div>
+      <div *ngIf="registerForm.get('username')?.errors?.['minlength']" class="error-message">
+        Mínimo de 3 caracteres
       </div>
-  
-      <div class="mb-3 position-relative">
-        <label for="password" class="form-label">Senha</label>
-        <input 
-          id="password" 
-          [type]="passwordVisible ? 'text' : 'password'" 
-          class="form-control" 
-          formControlName="password" 
-          placeholder="Digite a senha" 
-          required
-        />
-        <i 
-          class="bi" 
-          [ngClass]="passwordVisible ? 'bi-eye-slash' : 'bi-eye'"
-          (click)="togglePasswordVisibility('password')" 
-          style="position: absolute; right: 10px; top: 75%; transform: translateY(-50%); cursor: pointer;">
-        </i>
+    </div>
+
+    <div class="form-group">
+      <label for="email" class="form-label">E-mail</label>
+      <input id="email" type="email" class="form-control" 
+             formControlName="email" 
+             placeholder="Digite o e-mail"
+             [class.invalid]="registerForm.get('email')?.invalid && registerForm.get('email')?.touched">
+      <div *ngIf="registerForm.get('email')?.errors?.['required'] && registerForm.get('email')?.touched" class="error-message">
+        E-mail é obrigatório para administradores
       </div>
-  
-      <div class="mb-3 position-relative">
-        <label for="confirmPassword" class="form-label">Confirmar Senha</label>
-        <input 
-          id="confirmPassword" 
-          [type]="confirmPasswordVisible ? 'text' : 'password'" 
-          class="form-control" 
-          formControlName="confirmPassword" 
-          placeholder="Digite a senha novamente" 
-          required
-        />
-        <i 
-          class="bi" 
-          [ngClass]="confirmPasswordVisible ? 'bi-eye-slash' : 'bi-eye'"
-          (click)="togglePasswordVisibility('confirmPassword')" 
-          style="position: absolute; right: 10px; top: 75%; transform: translateY(-50%); cursor: pointer;">
-        </i>
+      <div *ngIf="registerForm.get('email')?.errors?.['email']" class="error-message">
+        Informe um e-mail válido
       </div>
-  
-      <div class="mb-3">
-        <label for="role" class="form-label">Permissão de Acesso</label>
-        <select id="role" class="form-select" formControlName="role" required>
-          <option value="" disabled selected>Selecione a permissão</option>
-          <option value="admin">Permissão total ao sistema</option>
-          <option value="employee">Permissões limitadas</option>
-        </select>
+    </div>
+
+    <div class="form-group password-group">
+      <label for="password" class="form-label">Senha</label>
+      <input id="password" 
+             [type]="passwordVisible ? 'text' : 'password'" 
+             class="form-control" 
+             formControlName="password" 
+             placeholder="Digite a senha"
+             [class.invalid]="registerForm.get('password')?.invalid && registerForm.get('password')?.touched">
+      <i class="password-toggle" 
+         [ngClass]="passwordVisible ? 'bi-eye-slash' : 'bi-eye'"
+         (click)="togglePasswordVisibility('password')"></i>
+      <div *ngIf="registerForm.get('password')?.errors?.['required'] && registerForm.get('password')?.touched" class="error-message">
+        Senha é obrigatória
       </div>
-  
-      <button type="submit" class="btn btn-primary w-100" [disabled]="registerForm.invalid">
+      <div *ngIf="registerForm.get('password')?.errors?.['minlength']" class="error-message">
+        Mínimo de 6 caracteres
+      </div>
+    </div>
+
+    <div class="form-group password-group">
+      <label for="confirmPassword" class="form-label">Confirmar Senha</label>
+      <input id="confirmPassword" 
+             [type]="confirmPasswordVisible ? 'text' : 'password'" 
+             class="form-control" 
+             formControlName="confirmPassword" 
+             placeholder="Digite a senha novamente"
+             [class.invalid]="registerForm.hasError('passwordMismatch')">
+      <i class="password-toggle" 
+         [ngClass]="confirmPasswordVisible ? 'bi-eye-slash' : 'bi-eye'"
+         (click)="togglePasswordVisibility('confirmPassword')"></i>
+      <div *ngIf="registerForm.hasError('passwordMismatch')" class="error-message">
+        As senhas não coincidem
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="role" class="form-label">Permissão de Acesso</label>
+      <select id="role" class="form-select" 
+              formControlName="role"
+              [class.invalid]="registerForm.get('role')?.invalid && registerForm.get('role')?.touched">
+        <option value="" disabled selected>Selecione a permissão</option>
+        <option value="admin">Permissão total ao sistema</option>
+        <option value="employee">Permissões limitadas</option>
+      </select>
+      <div *ngIf="registerForm.get('role')?.invalid && registerForm.get('role')?.touched" class="error-message">
+        Selecione uma permissão de acesso
+      </div>
+    </div>
+
+    <button type="submit" class="submit-button" [disabled]="registerForm.invalid || isLoading">
+      <span *ngIf="!isLoading">
         <i class="fas fa-user-plus"></i> Registrar Usuário
-      </button>
-    </form>
-  </div>
-  
-  <!-- Modal de Erro -->
-  <div *ngIf="isErrorModalVisible" class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title text-danger">Erro, usuário já cadastrado</h5>
-          <button type="button" class="btn-close" (click)="closeErrorModal()"></button>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-danger" (click)="closeErrorModal()">Fechar</button>
-        </div>
+      </span>
+      <span *ngIf="isLoading">
+        <i class="fas fa-spinner fa-spin"></i> Processando...
+      </span>
+    </button>
+  </form>
+
+  <div *ngIf="isErrorModalVisible" class="modal error-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-exclamation-triangle"></i> Erro no Cadastro
+        </h5>
+        <button type="button" class="close-button" (click)="closeErrorModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>{{ errorMessage }}</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="modal-button danger" (click)="closeErrorModal()">Fechar</button>
       </div>
     </div>
   </div>
-  
-  <!-- Modal de Sucesso -->
-  <div *ngIf="isModalVisible" class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Sucesso</h5>
-          <button type="button" class="btn-close" aria-label="Close" (click)="closeModal()"></button>
-        </div>
-        <div class="modal-body">
-          <p>{{ successMessage }}</p>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-primary" (click)="closeModal()">Fechar</button>
-        </div>
+
+  <div *ngIf="isModalVisible" class="modal success-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-check-circle"></i> Sucesso
+        </h5>
+        <button type="button" class="close-button" (click)="closeModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>{{ successMessage }}</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="modal-button primary" (click)="closeModal()">Fechar</button>
       </div>
     </div>
   </div>
-  </body>
+</div>

@@ -1,16 +1,31 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Appointment } from '../models/appointment.model';
 import { AppointmentService } from '../services/services2/appointments.service';
 import { Router } from '@angular/router';
-import { Observable } from 'rxjs';
 import { IbgeService } from '../ibge.service';
+import { AuthService } from '../services/auth.service';
+import { RoomService } from '../services/services2/room.service';
+import { BedService } from '../services/services2//bed.service';
 
 interface Cidade {
   id: number;
   nome: string;
+}
+
+interface Estado {
+  id: number;
+  nome: string;
+  sigla: string;
+}
+
+interface RoomAvailability {
+  [key: string]: {
+    available: number;
+    occupied: number;
+  };
 }
 
 @Component({
@@ -25,144 +40,231 @@ export class AppointmentsListComponent implements OnInit {
   filteredAppointments: Appointment[] = [];
   searchTerm: string = '';
   sortBy: string = 'name-asc';
-  rooms: any[] = [];
   availableBeds: number = 0;
   totalBeds: number = 12;
+  selectedAppointment: Appointment | null = null;
+  isHideModalOpen: boolean = false;
+  isLoading: boolean = false;
+  states: Estado[] = [];
+  cidades: Cidade[] = [];
+  roomAvailability: any = {};
+  
+
   roomNames: { [key: number]: string } = {
     1: 'Quarto A',
     2: 'Quarto B',
     3: 'Quarto C',
   };
-  selectedAppointment: Appointment | null = null;
-  isHideModalOpen: boolean = false;
 
   constructor(
     private http: HttpClient,
     private router: Router,
     private appointmentsService: AppointmentService,
-    private ibgeService: IbgeService
-  ) {}
-  states: any[] = [];
-  cities: any[] = [];
-  cidades: any[] = [];
-  
+    private ibgeService: IbgeService,
+    private authService: AuthService,
+    private roomService: RoomService,
+    private bedService: BedService,
+    private changeDetectorRef: ChangeDetectorRef
+  ) { }
+
   ngOnInit(): void {
-    this.loadStates(); 
-    this.loadAppointments();
-    this.loadCities(); 
+    this.loadInitialData();
   }
-  
 
-  // Método para carregar os estados e armazená-los na lista
-  loadStates(): void {
-    this.http.get<any[]>('https://servicodados.ibge.gov.br/api/v1/localidades/estados').subscribe({
-      next: (states) => {
-        this.states = states;
-        this.loadCities(); 
-      },
+  private async loadInitialData(): Promise<void> {
+    this.isLoading = true;
+    try {
+      await Promise.all([
+        this.loadAppointments(),
+        this.loadStates()
+      ]);
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+ private async loadAppointments(): Promise<void> {
+  try {
+    const data = await this.appointmentsService.getAppointments().toPromise();
+    this.processAppointments(data || []);
+    await this.calculateAvailableBeds();
+    this.changeDetectorRef.detectChanges(); 
+  } catch (err) {
+    console.error('Erro ao carregar agendamentos:', err);
+  }
+}
+
+  private processAppointments(data: Appointment[]): void {
+    this.appointments = data.map(appointment => {
+      this.processPhotoUrl(appointment);
+      appointment.accommodation_mode = appointment.accommodation_mode || 'pernoite';
+
+      if (!appointment.additionalInfo) {
+        appointment.additionalInfo = this.initializeAdditionalInfo();
+      }
+
+      appointment.additionalInfo.roomDisplayName = 
+        appointment.additionalInfo.room_id 
+          ? this.roomNames[appointment.additionalInfo.room_id] || 'Desconhecido' 
+          : 'Não alocado';
+
+      appointment.additionalInfo.bedDisplayName = 
+        appointment.additionalInfo.bed_id 
+          ? `Cama ${appointment.additionalInfo.bed_id}` 
+          : 'Não alocado';
+
+      return appointment;
     });
+
+    this.filteredAppointments = this.appointments.filter(a => !a.isHidden);
   }
 
-  loadCities(): void {
+  private processPhotoUrl(appointment: Appointment): void {
+    if (!appointment.photo) {
+      appointment.photo_url = undefined;
+      return;
+    }
+
+    if (appointment.photo instanceof File) {
+      appointment.photo_url = URL.createObjectURL(appointment.photo);
+      return;
+    }
+
+    if (typeof appointment.photo === 'string') {
+      if (appointment.photo.startsWith('http')) {
+        appointment.photo_url = appointment.photo;
+        return;
+      }
+      
+      if (appointment.photo.includes('photos/')) {
+        const filename = appointment.photo.split('photos/')[1];
+        appointment.photo_url = `http://localhost:8000/storage/photos/${filename}`;
+        return;
+      }
+    }
+
+    console.error('Formato de foto não suportado:', appointment.photo);
+    appointment.photo_url = undefined;
+  }
+
+  async calculateAvailableBeds(): Promise<void> {
+  try {
+    if (!this.appointments || this.appointments.length === 0) {
+      await this.loadAppointments();
+    }
+
+    const rooms = await this.roomService.getRooms().toPromise();
+    const allBeds = await this.bedService.getBedsByRoomId(1).toPromise().catch(() => []);
+
+    this.roomAvailability = {};
+    rooms?.forEach(room => {
+      this.roomAvailability[room.name.split(' ')[1]] = { 
+        available: 4,
+        occupied: 0
+      };
+    });
+
+    const occupiedAppointments = this.appointments
+      .filter(a => !a.isHidden && a.additionalInfo?.bed_id != null);
+    
+    // Atualiza contagem de ocupação
+    occupiedAppointments.forEach(app => {
+      const roomId = app.additionalInfo?.room_id;
+      const room = rooms?.find(r => r.id === roomId);
+      if (room) {
+        const roomLetter = room.name.split(' ')[1];
+        this.roomAvailability[roomLetter].occupied++;
+        this.roomAvailability[roomLetter].available = 
+          4 - this.roomAvailability[roomLetter].occupied;
+      }
+    });
+
+    // Calcula total de vagas disponíveis
+    this.totalBeds = 12;
+    
+    // Solução para os erros de tipagem
+    const roomsAvailability = Object.values(this.roomAvailability) as Array<{available: number, occupied: number}>;
+    this.availableBeds = roomsAvailability.reduce(
+      (sum: number, room: {available: number, occupied: number}) => sum + room.available, 
+      0
+    );
+
+    console.log('Vagas calculadas:', {
+      total: this.totalBeds,
+      disponíveis: this.availableBeds,
+      ocupadas: this.totalBeds - this.availableBeds,
+      quartos: this.roomAvailability
+    });
+
+    this.changeDetectorRef.detectChanges();
+  } catch (err) {
+    console.error('Erro ao calcular vagas:', err);
+    this.availableBeds = 0;
+    this.totalBeds = 12;
+    this.roomAvailability = {
+      A: { available: 0, occupied: 0 },
+      B: { available: 0, occupied: 0 },
+      C: { available: 0, occupied: 0 }
+    };
+    this.changeDetectorRef.detectChanges();
+  }
+}
+
+  private initializeAdditionalInfo() {
+    return {
+      ethnicity: '',
+      addictions: '',
+      is_accompanied: false,
+      benefits: '',
+      is_lactating: false,
+      has_disability: false,
+      reason_for_accommodation: '',
+      has_religion: false,
+      religion: '',
+      has_chronic_disease: false,
+      chronic_disease: '',
+      education_level: '',
+      nationality: '',
+      room_id: null,
+      bed_id: null,
+      stay_duration: null,
+    };
+  }
+
+  private async loadStates(): Promise<void> {
+    try {
+      const states = await this.http.get<Estado[]>('https://servicodados.ibge.gov.br/api/v1/localidades/estados').toPromise();
+      this.states = states || [];
+      this.loadCities();
+    } catch (err) {
+      console.error('Erro ao carregar estados:', err);
+    }
+  }
+
+  private loadCities(): void {
     this.cidades = [];
-  
     this.states.forEach(state => {
       this.ibgeService.getCidadesPorEstado(state.id).subscribe({
         next: (cidades) => {
-          this.cidades = [...this.cidades, ...cidades]; 
+          this.cidades = [...this.cidades, ...cidades];
         },
+        error: (err) => console.error(`Erro ao carregar cidades do estado ${state.id}:`, err)
       });
     });
   }
-  
 
   getStateName(stateId: string | number): string {
-    const id = Number(stateId); 
+    const id = Number(stateId);
     const estado = this.states.find(e => e.id === id);
     return estado ? estado.nome : 'Desconhecido';
   }
-  
 
   getCityName(cityId: string | number): string {
-    const id = Number(cityId); 
+    const id = Number(cityId);
     const cidade = this.cidades.find(c => c.id === id);
-    
-    if (!cidade) {
-      console.warn(`⚠️ Cidade não encontrada para ID: ${id}`);
-    }
-  
     return cidade ? cidade.nome : 'Desconhecido';
   }
-  
 
-  loadRooms(): void {
-    this.rooms = [
-      { id: 1, name: 'Quarto A', beds: [{ id: 1, isOccupied: false }, { id: 2, isOccupied: false }] },
-      { id: 2, name: 'Quarto B', beds: [{ id: 3, isOccupied: false }, { id: 4, isOccupied: true }] },
-      { id: 3, name: 'Quarto C', beds: [{ id: 5, isOccupied: false }, { id: 6, isOccupied: false }] },
-    ];
-  }
-  
-  loadAppointments(): void {
-    this.appointmentsService.getAppointments().subscribe({
-      next: (data: Appointment[]) => {
-        console.log('Dados recebidos do backend:', data); // Depuração
-  
-        this.appointments = data.map((appointment) => {
-          console.log('Acomodação recebida:', appointment.accommodation_mode); // Depuração
-  
-          if (appointment.photo && typeof appointment.photo === 'string') {
-            if (!appointment.photo.startsWith('http')) {
-              appointment.photo_url = `http://127.0.0.1:8000/storage/${appointment.photo}`;
-            } else {
-              appointment.photo_url = appointment.photo; 
-            }
-          }
-  
-          // Certifica que `accommodation_mode` está presente
-          appointment.accommodation_mode = appointment.accommodation_mode || 'overnight';
-  
-          if (!appointment.additionalInfo) {
-            appointment.additionalInfo = {
-              ethnicity: '',
-              addictions: '',
-              is_accompanied: false,
-              benefits: '',
-              is_lactating: false,
-              has_disability: false,
-              reason_for_accommodation: '',
-              has_religion: false,
-              religion: '',
-              has_chronic_disease: false,
-              chronic_disease: '',
-              education_level: '',
-              nationality: '',
-              room_id: null,
-              bed_id: null,
-              stay_duration: null,
-            };
-          }
-  
-          // Adiciona os nomes do quarto e da cama corretamente
-          appointment.additionalInfo.roomDisplayName = appointment.additionalInfo.room_id
-            ? this.roomNames[appointment.additionalInfo.room_id] || 'Desconhecido'
-            : 'Não alocado';
-  
-          appointment.additionalInfo.bedDisplayName = appointment.additionalInfo.bed_id
-            ? `Cama ${appointment.additionalInfo.bed_id}`
-            : 'Não alocado';
-  
-          return appointment;
-        });
-  
-        this.filteredAppointments = this.appointments.filter((a) => !a.isHidden);
-        this.calculateAvailableBeds();
-      },
-      error: (err) => console.error('Erro ao carregar agendamentos:', err),
-    });
-  }
-  
-  
   getAccommodationLabel(mode: string): string {
     const labels: { [key: string]: string } = {
       '24_horas': '24 Horas',
@@ -170,7 +272,6 @@ export class AppointmentsListComponent implements OnInit {
     };
     return labels[mode] || 'Desconhecido';
   }
-  
 
   getGenderLabel(gender: string): string {
     const genderMap: { [key: string]: string } = {
@@ -180,56 +281,35 @@ export class AppointmentsListComponent implements OnInit {
     };
     return genderMap[gender] || 'Não informado';
   }
-  
-  // Atualizar busca e filtro
+
   onSearch(): void {
     if (!this.searchTerm.trim()) {
-      // Se a busca estiver vazia, exibe apenas os que NÃO estão ocultos
       this.filteredAppointments = this.appointments.filter(a => !a.isHidden);
     } else {
-      // Se há pesquisa, exibe os que combinam com o nome (incluindo ocultos)
+      const searchTermLower = this.searchTerm.toLowerCase();
       this.filteredAppointments = this.appointments.filter(appointment =>
-        appointment.name.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        appointment.last_name.toLowerCase().includes(this.searchTerm.toLowerCase())
+        appointment.name.toLowerCase().includes(searchTermLower) ||
+        appointment.last_name.toLowerCase().includes(searchTermLower)
       );
     }
   }
 
-  formatLabel(value: string): string {
-    if (!value) return 'Não informado';
-    return value.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
-  }
-  
-  getEducationLabel(level: string): string {
-    const educationMap: { [key: string]: string } = {
-      fundamental: 'Ensino Fundamental',
-      medio: 'Ensino Médio',
-      tecnico: 'Curso Técnico',
-      superior: 'Ensino Superior',
-      pos_graduacao: 'Pós-Graduação',
-      mestrado: 'Mestrado',
-      doutorado: 'Doutorado'
-    };
-    return educationMap[level] || 'Não informado';
-  }
-
-  // Ordenar lista de agendamentos
   onSortChange(event: Event): void {
     const target = event.target as HTMLSelectElement;
     this.sortBy = target.value;
     this.sortFilteredAppointments();
   }
 
-  sortFilteredAppointments(): void {
-    const sortOrder = this.sortBy.split('-');
-    const key = sortOrder[0] as keyof Appointment;
-    const order = sortOrder[1];
-
+  private sortFilteredAppointments(): void {
+    const [key, order] = this.sortBy.split('-') as [keyof Appointment, string];
+    
     this.filteredAppointments.sort((a, b) => {
       const aValue = key === 'date' ? new Date(a.date).getTime() : String(a[key]).toLowerCase();
       const bValue = key === 'date' ? new Date(b.date).getTime() : String(b[key]).toLowerCase();
 
-      return order === 'asc' ? (aValue > bValue ? 1 : -1) : (aValue < bValue ? 1 : -1);
+      return order === 'asc' 
+        ? aValue > bValue ? 1 : -1 
+        : aValue < bValue ? 1 : -1;
     });
   }
 
@@ -237,144 +317,47 @@ export class AppointmentsListComponent implements OnInit {
     appointment.showMore = !appointment.showMore;
   }
 
-  // Abrir modal de ocultação
+  editAppointment(appointment: Appointment): void {
+    if (!appointment.id) {
+      console.error('Cannot edit appointment without ID');
+      return;
+    }
+    this.router.navigate(['/edit-list', appointment.id]);
+  }
+
   openHideModal(appointment: Appointment): void {
-    console.log('Abrindo modal para:', appointment);
     this.selectedAppointment = appointment;
     this.isHideModalOpen = true;
   }
-  
-  // Fechar modal de ocultação
+
   closeHideModal(): void {
     this.isHideModalOpen = false;
     this.selectedAppointment = null;
   }
 
-  // Confirmar ocultação
-  confirmHide(): void {
-    if (!this.selectedAppointment) {
-      return;
-    }
-  
-    this.appointmentsService.updateVisibility(this.selectedAppointment.id, true).subscribe({
-      next: () => {
-        console.log('Agendamento ocultado com sucesso.');
-        
-        // Atualiza localmente (opcional, caso prefira não recarregar a página)
-        this.selectedAppointment!.isHidden = true;
-        this.filteredAppointments = this.appointments.filter(a => !a.isHidden);
-        this.isHideModalOpen = false;
+ async confirmHide(): Promise<void> {
+  if (!this.selectedAppointment?.id) return;
 
-        window.location.reload();
-      },
-      error: (err) => {
-        console.error('Erro ao ocultar acolhimento:', err);
-      },
-    });
+  try {
+    await this.appointmentsService.updateVisibility(this.selectedAppointment.id, true).toPromise();
+    this.selectedAppointment.isHidden = true;
+    this.filteredAppointments = this.appointments.filter(a => !a.isHidden);
+    
+    await this.calculateAvailableBeds();
+    this.changeDetectorRef.detectChanges();
+    
+    this.closeHideModal();
+  } catch (err) {
+    console.error('Erro ao ocultar acolhimento:', err);
+  }
 }
 
-  saveEditedAppointment(appointment: Appointment): void {
-    if (!appointment.additionalInfo) {
-      appointment.additionalInfo = {
-        ethnicity: '',
-        addictions: '',
-        is_accompanied: false,
-        benefits: '',
-        is_lactating: false,
-        has_disability: false,
-        reason_for_accommodation: '',
-        has_religion: false,
-        religion: '',
-        has_chronic_disease: false,
-        chronic_disease: '',
-        education_level: '',
-        nationality: '',
-        room_id: null,
-        bed_id: null,
-        stay_duration: null,
-      };
-    }
-  
-    this.appointmentsService.updateAppointment(appointment.id, appointment).subscribe({
-      next: (updatedAppointment) => {
-        console.log('Dados retornados do backend:', updatedAppointment);
-  
-        // Atualiza a lista localmente
-        const index = this.appointments.findIndex((a) => a.id === updatedAppointment.id);
-        if (index !== -1) {
-          this.appointments[index] = updatedAppointment;
-        }
-  
-        this.filterAppointments(); // Atualiza a lista filtrada
-      },
-      error: (err) => console.error('Erro ao salvar os dados:', err),
-    });
-  }
-  
-  updateAvailableBeds(appointment: any, isFreeing: boolean): void {
-    const room = this.rooms.find((r: any) => r.id === appointment.additionalInfo.room_id);
-    if (room) {
-      const bed = room.beds.find((b: any) => b.id === appointment.additionalInfo.bed_id);
-      if (bed) {
-        bed.isOccupied = !isFreeing;
-        this.calculateAvailableBeds(); // Atualiza as vagas disponíveis
-      }
-    }
-  }
-  
-  filterAppointments(): void {
-    if (this.searchTerm) {
-      const searchTermLower = this.searchTerm.toLowerCase();
-      this.filteredAppointments = this.appointments.filter(
-        (appointment) =>
-          (!appointment.isHidden || this.searchTerm) && 
-          (appointment.name.toLowerCase().includes(searchTermLower) ||
-            appointment.last_name.toLowerCase().includes(searchTermLower))
-      );
-    } else {
-      this.filteredAppointments = this.appointments.filter((appointment) => !appointment.isHidden);
-    }
-  }
-
-  editAppointment(appointment: Appointment): void {
-    if (!appointment.additionalInfo) {
-      appointment.additionalInfo = {
-        ethnicity: '',
-        addictions: '',
-        is_accompanied: false,
-        benefits: '',
-        is_lactating: false,
-        has_disability: false,
-        reason_for_accommodation: '',
-        has_religion: false,
-        religion: '',
-        has_chronic_disease: false,
-        chronic_disease: '',
-        education_level: '',
-        nationality: '',
-        room_id: null,
-        bed_id: null,
-        stay_duration: null,
-      };
-    }
-  
-    this.router.navigate(['/edit', appointment.id]);
-  }
-  
-  calculateAvailableBeds(): void {
-    const occupiedBeds = this.appointments
-      .filter((appointment) => appointment.additionalInfo?.bed_id != null)
-      .map((appointment) => appointment.additionalInfo!.bed_id);
-  
-    this.availableBeds = this.totalBeds - occupiedBeds.length;
-  }
-  
   toCamelCase(str: string): string {
     if (!str) return '';
     return str
       .toLowerCase()
       .split(' ')
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
   }
 
@@ -385,42 +368,45 @@ export class AppointmentsListComponent implements OnInit {
 
   formatPhoneNumber(phone?: string): string {
     if (!phone) return 'Não informado';
-  
-    // Remove tudo que não for número
     const cleaned = phone.replace(/\D/g, '');
-  
-    // Verifica se tem 11 dígitos (número válido com DDD e 9 na frente)
+    
     if (cleaned.length === 11) {
-      return `(${cleaned.substring(0, 2)}) 9 ${cleaned.substring(3, 7)}-${cleaned.substring(7, 11)}`;
+      return `(${cleaned.substring(0, 2)}) ${cleaned.substring(2, 7)}-${cleaned.substring(7)}`;
     }
-  
-    // Caso tenha apenas 10 dígitos (telefone fixo)
+    
     if (cleaned.length === 10) {
-      return `(${cleaned.substring(0, 2)}) ${cleaned.substring(2, 6)}-${cleaned.substring(6, 10)}`;
+      return `(${cleaned.substring(0, 2)}) ${cleaned.substring(2, 6)}-${cleaned.substring(6)}`;
     }
-  
-    return phone; // Se não puder formatar, retorna como está
-  }
-
-  formatString(value: string): string {
-    if (!value) return '';
-    return value
-      .split('_')
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(' ');
+    
+    return phone;
   }
 
   formatTime(time: string | null): string {
     if (!time) return 'Não informado';
-  
-    const [hours, minutes] = time.split(':').map(Number);
-  
+    const [hoursStr, minutesStr] = time.split(':');
+    const hours = parseInt(hoursStr, 10);
+    const minutes = parseInt(minutesStr, 10);
+    
     if (isNaN(hours) || isNaN(minutes)) return time;
-  
-    // Se for maior ou igual a 12h, adiciona "PM"; senão, "AM"
+    
     const period = hours >= 12 ? 'PM' : 'AM';
-  
-    return `${hours}:${minutes.toString().padStart(2, '0')} ${period}`;
+    const displayHours = hours % 12 || 12;
+    
+    return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
   }
-  
+
+  formatLabel(value: string): string {
+    if (!value) return 'Não informado';
+    return value
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, char => char.toUpperCase());
+  }
+
+  ngOnDestroy() {
+    this.appointments.forEach(appointment => {
+      if (appointment.photo instanceof File && appointment.photo_url) {
+        URL.revokeObjectURL(appointment.photo_url);
+      }
+    });
+  }
 }
